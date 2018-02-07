@@ -9,6 +9,7 @@
   "author": "Marc Monchablon",
   "license": "ISC",
   "dependencies": {
+    "pg": "^7.4.1",
     "restify": "^6.3.4"
   }
 }

@@ -4,7 +4,8 @@ const loginRoute = require('./routes/auth/login/login.route.js');
 
 
 module.exports = class Server {
-  constructor() {
+  constructor(databaseClient) {
+    this.db = databaseClient;
     this.restifyServer = restify.createServer();
 
     loginRoute.register(this.restifyServer);
