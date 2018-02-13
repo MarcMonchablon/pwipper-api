@@ -13,8 +13,9 @@ class Server {
 
     const authModule = AuthModule(this.dbClient);
 
-    authModule.register(this.restifyServer);
+    authModule.registerRouteModule(this.restifyServer);
   }
+
 
   listen(port) {
     this.restifyServer.listen(port, () => {

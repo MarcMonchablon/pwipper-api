@@ -9,6 +9,7 @@ class AuthQueryService {
     console.log('AuthQueryService::fetchAccount_id:', accountId); // TODO
   }
 
+
   fetchAccount_username(username) {
     console.log('AuthQueryService::fetchAccount_username:', username); // TODO
   }
@@ -19,10 +20,12 @@ class AuthQueryService {
     return 'CheckLogin / email'; // TODO;
   }
 
+
   checkLogin_username(username, password) {
     console.log('CheckLogin / username');
     return 'CheckLogin / username'; // TODO
   }
 }
+
 
 module.exports = AuthQueryService;

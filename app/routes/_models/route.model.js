@@ -10,7 +10,8 @@ class Route {
     this.response = response;
   }
 
-  register(restifyServer) {
+
+  registerRoute(restifyServer) {
     const restifyMapping = {
       'POST': 'post',
       'GET': 'get',
@@ -33,10 +34,12 @@ class Route {
     }
   }
 
+
   static checkVerb(verb) {
     const httpVerb = ['POST', 'GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
     return httpVerb.includes(verb);
   }
 }
+
 
 module.exports = Route;
