@@ -13,8 +13,15 @@ class RouteModule {
     this.services[serviceName] = serviceFn;
   }
 
-  addRoute(route) {
-    this.routes.push(route);
+  getService(serviceName) {
+    if (!this.services[serviceName]) {
+      throw new Error(`Service '${serviceName}' doesn't exist in ${this.moduleName}`);
+    }
+    return this.services[serviceName];
+  }
+
+  addRoute(routeFn) {
+    this.routes.push(routeFn(this));
   }
 
   register(restifyServer) {

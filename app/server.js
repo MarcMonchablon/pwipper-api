@@ -4,8 +4,12 @@ const AuthModule = require('./routes/auth');
 
 class Server {
   constructor(dbClient) {
-    this.restifyServer = restify.createServer();
     this.dbClient = dbClient;
+
+    const server = restify.createServer();
+    server.use(restify.plugins.acceptParser(server.acceptable));
+    server.use(restify.plugins.bodyParser({ mapParams: false }));
+    this.restifyServer = server;
 
     const authModule = AuthModule(this.dbClient);
 

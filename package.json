@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "pg": "^7.4.1",
-    "restify": "^6.3.4"
+    "restify": "^6.3.4",
+    "restify-errors": "^5.0.0"
   }
 }

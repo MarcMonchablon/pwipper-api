@@ -1,17 +1,17 @@
 const RouteModule = require('../_models/route-module.model.js');
 
 const AuthQueryService = require('./_query/auth.query-service.js');
+const AccountValidationService = require('./_service/account-validation.service.js');
+const LoginRouteFn = require('./login/login.route.js');
 
 
-function AuthModule(dbClient) {
+module.exports = function(dbClient) {
   const authModule = new RouteModule('AuthModule');
 
-  const authQueryService = new AuthQueryService(dbClient);
+  authModule.addService('authQueryService', new AuthQueryService(dbClient));
+  authModule.addService('accountValidationService', new AccountValidationService());
 
-  const loginRoute = require('./login/login.route.js')(authQueryService);
-  authModule.addRoute(loginRoute);
+  authModule.addRoute(LoginRouteFn);
 
   return authModule;
-}
-
-module.exports = AuthModule;
+};
