@@ -1,20 +1,15 @@
 const restify = require('restify');
 
-const loginRoute = require('./routes/auth/login/login.route.js');
+const AuthModule = require('./routes/auth');
 
-
-module.exports = class Server {
-  constructor(databaseClient) {
-    this.db = databaseClient;
+class Server {
+  constructor(dbClient) {
     this.restifyServer = restify.createServer();
+    this.dbClient = dbClient;
 
-    loginRoute.register(this.restifyServer);
-    const respond = function(req, res, next) {
-      res.send('glup ' + req.params.name);
-      next();
-    };
+    const authModule = AuthModule(this.dbClient);
 
-    this.restifyServer.get('/hello/:name', respond);
+    authModule.register(this.restifyServer);
   }
 
   listen(port) {
@@ -22,4 +17,6 @@ module.exports = class Server {
       console.log('%s listening at %s', this.restifyServer.name, this.restifyServer.url);
     })
   }
-};
+}
+
+module.exports = Server;

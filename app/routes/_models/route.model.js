@@ -1,5 +1,5 @@
 
-module.exports = class Route {
+class Route {
   constructor(verb, path, response) {
     if (!Route.checkVerb(verb)) {
       throw new TypeError(`[Route ${path}]: ${verb} is not a valid HTTP verb`);
@@ -37,4 +37,6 @@ module.exports = class Route {
     const httpVerb = ['POST', 'GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
     return httpVerb.includes(verb);
   }
-};
+}
+
+module.exports = Route;
