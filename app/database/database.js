@@ -3,19 +3,24 @@ const { Client } = require('pg');
 module.exports = class Database {
   constructor(credentials) {
     this.client = new Client(credentials);
-    this.client.connect();
+    this.status = 'connecting';
+    this.client.connect((err) => {
+      if (err) {
+        this.status = 'error';
+        this.error = err;
+        console.error('Postgres connection error : ', err);
+      } else {
+        this.status = 'ok';
+        console.log('Postgres connection OK');
+      }
+    });
   }
 
-
-  test() {
-    const client = this.client;
-    client.query(
-      'SELECT $1::text as message', ['Hello world!'],
-      (err, res) => {
-        console.log(err ? err.stack : res.rows[0].message);
-        client.end();
-      }
-    );
+  getClient() {
+    if (this.status !== 'ok') {
+      throw new Error(`Trying to get Postgres client, but no connection made yet (status: ${this.status})`);
+    }
+    return this.client;
   }
 
 };

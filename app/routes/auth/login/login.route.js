@@ -4,6 +4,7 @@ const Route = require('../../_models/route.model');
 module.exports = function(authModule) {
   const authQueryService = authModule.getService('authQueryService');
   const accountValidationService = authModule.getService('accountValidationService');
+  const credentialsService = authModule.getService('credentialsService');
 
 
   const LoginResponseFn = function (req, res, next) {
@@ -15,14 +16,26 @@ module.exports = function(authModule) {
 
     const emailOrUsername = req.body['email-or-username'];
     const password = req.body['password'];
-    const query = accountValidationService.isEmail(emailOrUsername) ?
+    const data$= accountValidationService.isEmail(emailOrUsername) ?
       authQueryService.checkLogin_email(emailOrUsername, password) :
       authQueryService.checkLogin_username(emailOrUsername, password);
 
-    // TODO
-    res.send(query);
-    next();
+    data$.then(data => {
+      if (data.empty || !credentialsService.passwordMatch(data.account, data.credentials, password)) {
+        res.send({ loginSuccessful: false });
+        next();
+      } else {
+        res.send({ loginSuccessful: true, account: data.account });
+        next();
+      }
+    }).catch(e => {
+      console.error('LoginResponse: Something unexpected happened : ', e);
+      next(new errs.InternalServerError());
+    });
   };
 
   return new Route('POST', 'auth/login', LoginResponseFn);
 };
+
+
+
