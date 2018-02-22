@@ -30,7 +30,7 @@ module.exports = function(authModule) {
       }
     }).catch(e => {
       console.error('LoginResponse: Something unexpected happened : ', e);
-      next(new errs.InternalServerError());
+      next(new errs.InternalServerError(e));
     });
   };
 
