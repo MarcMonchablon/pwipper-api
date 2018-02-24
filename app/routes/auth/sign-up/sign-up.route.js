@@ -19,12 +19,9 @@ module.exports = function(authModule) {
     const username = req.body['username'];
     const password = req.body['password'];
 
-    if (!accountValidationService.isValidUsername(username)) {
-      return next(new errs.PreconditionFailed("Invalid Username"));
-    }
-
-    if (!accountValidationService.isValidEmail(email)) {
-      return next(new errs.PreconditionFailed("Invalid email"));
+    const dataValidityState = checkData(accountValidationService, username, email);
+    if (dataValidityState !== 'OK') {
+      return next(new errs.PreconditionFailedError(dataValidityState));
     }
 
     authQueryService.createAccount(username, email, password)
@@ -43,6 +40,18 @@ module.exports = function(authModule) {
         next(new errs.InternalServerError(e));
       });
   };
+
+  function checkData(validator, username, email) {
+    if (!validator.checkEmailMinLength(email)) { return 'EMAIL_TOO_SHORT'; }
+    if (!validator.checkEmailMaxLength(email)) { return 'EMAIL_TOO_LONG'; }
+    if (!validator.checkEmailCharset(email)) { return 'INVALID_EMAIL_CHARACTERS'; }
+
+    if (!validator.checkUsernameMinLength(username)) { return 'USERNAME_TOO_SHORT'; }
+    if (!validator.checkUsernameMaxLength(username)) { return 'USERNAME_TOO_LONG'; }
+    if (!validator.checkUsernameCharset(username)) { return 'INVALID_USERNAME_CHARACTERS'; }
+
+    return 'OK'; // no basic error found
+  }
 
   function getErrorCode(queryResponse) {
     switch (queryResponse.errorType) {
