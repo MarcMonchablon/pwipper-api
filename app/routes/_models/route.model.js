@@ -1,17 +1,37 @@
 
 class Route {
-  constructor(verb, path, response) {
+  constructor(path) {
+    this.path = path;
+    this.endpoints = [];
+  }
+
+
+  addEndpoint(verb, response) {
     if (!Route.checkVerb(verb)) {
-      throw new TypeError(`[Route ${path}]: ${verb} is not a valid HTTP verb`);
+      throw new TypeError(`[Route ${this.path}]: ${verb} is not a valid HTTP verb`);
+    } else if (this.endpointAlreadyPresent(verb)) {
+      throw new RangeError(`[Route ${this.path}]: ${verb} endpoint is already defined`);
     }
 
-    this.verb = verb;
-    this.path = path;
-    this.response = response;
+    this.endpoints.push({verb: verb, response: response });
   }
 
 
   registerRoute(restifyServer) {
+    this.endpoints.forEach(endpoint => this.registerEndpoint(restifyServer, endpoint.verb, endpoint.response));
+
+    // Every route should implement OPTIONS for CORS purposes
+    if (!this.endpointAlreadyPresent('OPTIONS')) {
+      const defaultOptionsResponse = function(req, res, next) {
+        res.send();
+        next();
+      };
+      this.registerEndpoint(restifyServer, 'OPTIONS', defaultOptionsResponse)
+    }
+  }
+
+
+  registerEndpoint(restifyServer, verb, response) {
     const restifyMapping = {
       'POST': 'post',
       'GET': 'get',
@@ -22,16 +42,24 @@ class Route {
       'OPTIONS': 'opts'
     };
 
-    switch (this.verb) {
+    switch (verb) {
       case 'POST':
-        restifyServer.post(this.path, this.response);
+        restifyServer.post(this.path, response);
         break;
       case 'GET':
-        restifyServer.get(this.path, this.response);
+        restifyServer.get(this.path, response);
+        break;
+      case 'OPTIONS':
+        restifyServer.opts(this.path, response);
         break;
       default:
-        console.error('Not done yet !'); // TODO
+        console.error(`Route model: HTTP verb ${verb} not handled.`);
     }
+  }
+
+
+  endpointAlreadyPresent(verb) {
+    return this.endpoints.some(e => e.verb === verb);
   }
 
 

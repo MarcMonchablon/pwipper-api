@@ -2,11 +2,13 @@ const errs = require('restify-errors');
 const Route = require('../../_models/route.model');
 
 module.exports = function(authModule) {
+  const route = new Route('auth/sign-up');
+
   const authQueryService = authModule.getService('authQueryService');
   const accountValidationService = authModule.getService('accountValidationService');
 
 
-  const signUpResponse = function(req, res, next) {
+  const signUp_POST = function(req, res, next) {
     console.log('sign up !');
     if (!(req.body &&
       req.body['email'] &&
@@ -41,6 +43,7 @@ module.exports = function(authModule) {
       });
   };
 
+
   function checkData(validator, username, email) {
     if (!validator.checkEmailMinLength(email)) { return 'EMAIL_TOO_SHORT'; }
     if (!validator.checkEmailMaxLength(email)) { return 'EMAIL_TOO_LONG'; }
@@ -52,6 +55,7 @@ module.exports = function(authModule) {
 
     return 'OK'; // no basic error found
   }
+
 
   function getErrorCode(queryResponse) {
     switch (queryResponse.errorType) {
@@ -71,5 +75,7 @@ module.exports = function(authModule) {
     return null;
   }
 
-  return new Route('POST', 'auth/sign-up', signUpResponse);
+
+  route.addEndpoint('POST', signUp_POST);
+  return route;
 };

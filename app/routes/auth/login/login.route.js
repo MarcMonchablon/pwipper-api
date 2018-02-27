@@ -2,18 +2,20 @@ const errs = require('restify-errors');
 const Route = require('../../_models/route.model');
 
 module.exports = function(authModule) {
+  const route = new Route('auth/login');
+
   const authQueryService = authModule.getService('authQueryService');
   const accountValidationService = authModule.getService('accountValidationService');
   const credentialsService = authModule.getService('credentialsService');
 
 
-  const LoginResponseFn = function (req, res, next) {
-
+  const login_POST = function (req, res, next) {
     // Check for missing parameters in body
     if (!(req.body && req.body['email-or-username'] && req.body['password'])) {
       return next(new errs.PreconditionFailedError("Payload should contain fields 'email-or-username' and 'password"));
     }
 
+    // TODO: Ajouter les trucs CORS pour OPTIONS.  (creer objet endpoint ? mettre ça dans un autre middleman ?)
     const emailOrUsername = req.body['email-or-username'];
     const password = req.body['password'];
     const data$= accountValidationService.isEmail(emailOrUsername) ?
@@ -34,7 +36,9 @@ module.exports = function(authModule) {
     });
   };
 
-  return new Route('POST', 'auth/login', LoginResponseFn);
+
+  route.addEndpoint('POST', login_POST);
+  return route;
 };
 
 
