@@ -76,6 +76,6 @@ module.exports = function(authModule) {
   }
 
 
-  route.addEndpoint('POST', signUp_POST);
+  route.addEndpoint('POST', [signUp_POST]);
   return route;
 };

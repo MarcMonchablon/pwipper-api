@@ -80,7 +80,7 @@ class AuthQueryService {
   checkLogin_email(email, password) {
     const query = `
     SELECT * 
-    FROM accounts INNER JOIN credentials ON (accounts.account_id = credentials.account_id)
+    FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
     WHERE email = $1;`;
 
     return this.db.getClient()
@@ -92,7 +92,7 @@ class AuthQueryService {
   checkLogin_username(username, password) {
     const query = `
     SELECT * 
-    FROM accounts INNER JOIN credentials ON (accounts.account_id = credentials.account_id)
+    FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
     WHERE username = $1;`;
 
     return this.db.getClient()

@@ -2,20 +2,23 @@ const errs = require('restify-errors');
 const Route = require('../../_models/route.model');
 
 module.exports = function(authModule) {
-  const route = new Route('auth/login');
+  const route = new Route('login');
 
   const authQueryService = authModule.getService('authQueryService');
   const accountValidationService = authModule.getService('accountValidationService');
   const credentialsService = authModule.getService('credentialsService');
 
 
-  const login_POST = function (req, res, next) {
+  const login_POST_checkParams = function(req, res, next) {
     // Check for missing parameters in body
     if (!(req.body && req.body['email-or-username'] && req.body['password'])) {
       return next(new errs.PreconditionFailedError("Payload should contain fields 'email-or-username' and 'password"));
+    } else {
+      next();
     }
+  };
 
-    // TODO: Ajouter les trucs CORS pour OPTIONS.  (creer objet endpoint ? mettre ça dans un autre middleman ?)
+  const login_POST = function(req, res, next) {
     const emailOrUsername = req.body['email-or-username'];
     const password = req.body['password'];
     const data$= accountValidationService.isEmail(emailOrUsername) ?
@@ -24,10 +27,10 @@ module.exports = function(authModule) {
 
     data$.then(data => {
       if (data.empty || !credentialsService.passwordMatch(data.account, data.credentials, password)) {
-        res.send({ loginSuccessful: false });
+        res.send(new errs.UnprocessableEntityError("Invalid credentials"));
         next();
       } else {
-        res.send({ loginSuccessful: true, account: data.account });
+        res.send({account: data.account });
         next();
       }
     }).catch(e => {
@@ -37,7 +40,14 @@ module.exports = function(authModule) {
   };
 
 
-  route.addEndpoint('POST', login_POST);
+  const login_OPTIONS = function(req, res, next) {
+    res.send();
+    next();
+  };
+
+
+  route.addEndpoint('POST', [login_POST_checkParams, login_POST]);
+  route.addEndpoint('OPTIONS', [login_OPTIONS]);
   return route;
 };
 
