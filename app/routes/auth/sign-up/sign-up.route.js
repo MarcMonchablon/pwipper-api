@@ -8,22 +8,56 @@ module.exports = function(authModule) {
   const accountValidationService = authModule.getService('accountValidationService');
 
 
-  const signUp_POST = function(req, res, next) {
-    console.log('sign up !');
-    if (!(req.body &&
-      req.body['email'] &&
-      req.body['username'] &&
-      req.body['password'])) {
-      return next(new errs.PreconditionFailed("Payload should contain fields 'email', 'username' and 'password"));
+  const signUp_POST_checkParams = function(req, res, next) {
+    // Check for missing parameters in body
+    let error = null;
+
+    if (!req.body) {
+      error = {
+        code: 'MISSING_PAYLOAD',
+        message: 'Payload is missing'
+      };
+    } else if (!req.body['email']) {
+      error = {
+        code: 'MISSING_FIELD',
+        detail: 'email',
+        message: "Payload should contain fields 'email', 'username' and 'password'."
+      };
+    } else if (!req.body['username']) {
+      error = {
+        code: 'MISSING_FIELD',
+        detail: 'username',
+        message: "Payload should contain fields 'email', 'username' and 'password'."
+      }
+    } else if (!req.body['password']) {
+      error = {
+        code: 'MISSING_FIELD',
+        detail: 'password',
+        message: "Payload should contain fields 'email', 'username' and 'password'."
+      }
     }
 
+    if (error) {
+      return next(new errs.PreconditionFailedError(error));
+    } else {
+      next();
+    }
+  };
+
+
+  const signUp_POST = function(req, res, next) {
     const email = req.body['email'];
     const username = req.body['username'];
     const password = req.body['password'];
 
     const dataValidityState = checkData(accountValidationService, username, email);
     if (dataValidityState !== 'OK') {
-      return next(new errs.PreconditionFailedError(dataValidityState));
+      const error = {
+        code: 'INVALID_FIELD',
+        detail: dataValidityState,
+        message: dataValidityState
+      };
+      return next(new errs.PreconditionFailedError(error));
     }
 
     authQueryService.createAccount(username, email, password)
@@ -34,7 +68,7 @@ module.exports = function(authModule) {
         } else {
           const errorCode = getErrorCode(queryResponse);
           const httpError = errorCode ?
-            new errs.PreconditionFailedError(errorCode) :
+            new errs.PreconditionFailedError({ code: errorCode, message: errorCode}) : // TODO: better message
             new errs.InternalServerError(queryResponse);
           next(httpError);
         }
@@ -76,6 +110,6 @@ module.exports = function(authModule) {
   }
 
 
-  route.addEndpoint('POST', [signUp_POST]);
+  route.addEndpoint('POST', [signUp_POST_checkParams, signUp_POST]);
   return route;
 };

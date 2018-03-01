@@ -11,8 +11,29 @@ module.exports = function(authModule) {
 
   const login_POST_checkParams = function(req, res, next) {
     // Check for missing parameters in body
-    if (!(req.body && req.body['email-or-username'] && req.body['password'])) {
-      return next(new errs.PreconditionFailedError("Payload should contain fields 'email-or-username' and 'password"));
+    let error = null;
+
+    if (!req.body) {
+      error = {
+        code: 'MISSING_PAYLOAD',
+        message: 'Payload is missing'
+      };
+    } else if (!req.body['email-or-username']) {
+      error = {
+        code: 'MISSING_FIELD',
+        detail: 'email-or-username',
+        message: "Payload should contain fields 'email-or-username' and 'password'."
+      };
+    } else if (!req.body['password']) {
+      error = {
+        code: 'MISSING_FIELD',
+        detail: 'password',
+        message: "Payload should contain fields 'email-or-username' and 'password'."
+      };
+    }
+
+    if (error) {
+      return next(new errs.PreconditionFailedError(error));
     } else {
       next();
     }
@@ -27,7 +48,7 @@ module.exports = function(authModule) {
 
     data$.then(data => {
       if (data.empty || !credentialsService.passwordMatch(data.account, data.credentials, password)) {
-        res.send(new errs.UnprocessableEntityError("Invalid credentials"));
+        res.send(new errs.UnprocessableEntityError({code: 'INVALID_CREDENTIALS', message: 'Invalid credentials'}));
         next();
       } else {
         res.send({account: data.account });
