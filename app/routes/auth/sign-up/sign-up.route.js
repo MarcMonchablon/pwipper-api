@@ -2,7 +2,7 @@ const errs = require('restify-errors');
 const Route = require('../../_models/route.model');
 
 module.exports = function(authModule) {
-  const route = new Route('auth/sign-up');
+  const route = new Route('sign-up');
 
   const authQueryService = authModule.getService('authQueryService');
   const accountValidationService = authModule.getService('accountValidationService');
@@ -110,6 +110,13 @@ module.exports = function(authModule) {
   }
 
 
+  const signUp_OPTIONS = function(req, res, next) {
+    res.send();
+    next();
+  };
+
+
   route.addEndpoint('POST', [signUp_POST_checkParams, signUp_POST]);
+  route.addEndpoint('OPTIONS', [signUp_OPTIONS]);
   return route;
 };
