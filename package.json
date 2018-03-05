@@ -12,5 +12,14 @@
     "pg": "^7.4.1",
     "restify": "^6.3.4",
     "restify-errors": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^9.4.6",
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-typescript": "^4.0.1",
+    "run-sequence": "^2.2.1",
+    "typescript": "^2.7.2"
   }
 }
