@@ -1,5 +1,5 @@
-const Server = require('./app/server.js');
-const Database = require('./app/database/database');
+const Server = require('./src/server.js');
+const Database = require('./src/database/database');
 
 // CONFIG
 const port = 4100;
