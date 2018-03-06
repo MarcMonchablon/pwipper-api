@@ -15,6 +15,10 @@
   },
   "devDependencies": {
     "@types/node": "^9.4.6",
+    "@types/pg": "^7.4.5",
+    "@types/restify": "^5.0.7",
+    "@types/restify-errors": "^4.3.2",
+    "@types/restify-plugins": "^1.5.11",
     "del": "^3.0.0",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^2.6.4",

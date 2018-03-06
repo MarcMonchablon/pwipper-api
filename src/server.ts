@@ -1,4 +1,4 @@
-const restify = require('restify');
+import * as restify from 'restify';
 import { AuthModule } from './routes/auth';
 
 

@@ -1,4 +1,5 @@
-const errs = require('restify-errors');
+import * as errs from 'restify-errors';
+
 import { Route } from '../../_models/route.model';
 
 
