@@ -1,5 +1,7 @@
 
-class AuthQueryService {
+export class AuthQueryService {
+  private db: any;
+
   constructor(database) {
     this.db = database;
   }
@@ -48,7 +50,7 @@ class AuthQueryService {
           throw pgError;
         }
 
-        const response = {
+        const response: any = {
           created: false,
         };
         switch (pgError.code) {
@@ -125,6 +127,3 @@ class AuthQueryService {
     }
   }
 }
-
-
-module.exports = AuthQueryService;

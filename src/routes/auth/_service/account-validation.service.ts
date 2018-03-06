@@ -1,5 +1,5 @@
 
-class AccountValidationService {
+export class AccountValidationService {
   constructor() {}
 
 
@@ -18,6 +18,3 @@ class AccountValidationService {
   // For now we only watch for space or @ in username;
   checkUsernameCharset(username) { return !/[\s|@]/.test(username); }
 }
-
-
-module.exports = AccountValidationService;

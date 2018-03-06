@@ -2,7 +2,10 @@ const restify = require('restify');
 
 const AuthModule = require('./routes/auth');
 
-class Server {
+export class Server {
+  private database: any;
+  private restifyServer: any;
+
   constructor(dbClient) {
     this.database = dbClient;
 
@@ -17,11 +20,9 @@ class Server {
   }
 
 
-  listen(port) {
+  public listen(port) {
     this.restifyServer.listen(port, () => {
       console.log('%s listening at %s', this.restifyServer.name, this.restifyServer.url);
     })
   }
 }
-
-module.exports = Server;

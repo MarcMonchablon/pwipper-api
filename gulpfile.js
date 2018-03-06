@@ -18,21 +18,12 @@ gulp.task('compile-ts', function() {
 });
 
 
-
-
-gulp.task('copy-js', function() {
-  return gulp.src('src/**/*.js')
-    .pipe(gulp.dest('dist'));
-});
-
-
 gulp.task('clean', function() {
   return del(['dist/*', '!dist/.gitkeep']);
 });
 
 
-gulp.task('watch', function() {
-  gulp.watch('src/**/*.js', ['copy-js']);
+gulp.task('watch', ['compile-ts'], function() {
   gulp.watch('src/**/*.ts', ['compile-ts']);
 });
 
@@ -40,6 +31,6 @@ gulp.task('watch', function() {
 gulp.task('default', function(cb) {
   runSequence(
     'clean',
-    ['copy-js', 'compile-ts'],
+    'compile-ts',
     cb);
 });

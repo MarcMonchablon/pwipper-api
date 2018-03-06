@@ -1,5 +1,5 @@
 
-class CredentialsService {
+export class CredentialsService {
   constructor() {}
 
 
@@ -13,6 +13,3 @@ class CredentialsService {
     }
   };
 }
-
-
-module.exports = CredentialsService;

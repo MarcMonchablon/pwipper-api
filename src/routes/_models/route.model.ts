@@ -1,5 +1,9 @@
 
-class Route {
+export class Route {
+  private path: any;
+  private endpoints: any;
+
+
   constructor(path) {
     this.path = path;
     this.endpoints = [];
@@ -74,6 +78,3 @@ class Route {
     return httpVerb.includes(verb);
   }
 }
-
-
-module.exports = Route;

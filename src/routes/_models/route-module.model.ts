@@ -1,4 +1,9 @@
-class RouteModule {
+
+export class RouteModule {
+  private moduleName: any;
+  private services: any;
+  private routes: any;
+
   constructor(moduleName) {
     this.moduleName = moduleName;
 
@@ -32,6 +37,3 @@ class RouteModule {
     this.routes.forEach(route => route.registerRoute(restifyServer));
   }
 }
-
-
-module.exports = RouteModule;

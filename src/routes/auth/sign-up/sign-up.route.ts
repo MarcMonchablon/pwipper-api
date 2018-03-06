@@ -1,7 +1,8 @@
 const errs = require('restify-errors');
-const Route = require('../../_models/route.model');
+import { Route } from '../../_models/route.model';
 
-module.exports = function(authModule) {
+
+export default function(authModule) {
   const route = new Route('sign-up');
 
   const authQueryService = authModule.getService('authQueryService');

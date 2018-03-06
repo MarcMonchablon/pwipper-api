@@ -1,6 +1,11 @@
 const { Client } = require('pg');
 
-module.exports = class Database {
+
+export class Database {
+  private client: any;
+  private status: any;
+  private error: any;
+
   constructor(credentials) {
     this.client = new Client(credentials);
     this.status = 'connecting';
@@ -23,4 +28,4 @@ module.exports = class Database {
     return this.client;
   }
 
-};
+}
