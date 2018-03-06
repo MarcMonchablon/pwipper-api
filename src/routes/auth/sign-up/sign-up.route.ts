@@ -1,16 +1,20 @@
+import * as Restify from 'restify';
 import * as errs from 'restify-errors';
 
+import { RouteModule } from '../../_models/route-module.model';
 import { Route } from '../../_models/route.model';
+import { AuthQueryService } from '../_query/auth.query-service';
+import { AccountValidationService } from '../_service/account-validation.service';
 
 
-export function SignUpFn(authModule) {
+export function SignUpFn(authModule: RouteModule): Route {
   const route = new Route('sign-up');
 
-  const authQueryService = authModule.getService('authQueryService');
-  const accountValidationService = authModule.getService('accountValidationService');
+  const authQueryService: AuthQueryService = authModule.getService('authQueryService');
+  const accountValidationService: AccountValidationService = authModule.getService('accountValidationService');
 
 
-  const signUp_POST_checkParams = function(req, res, next) {
+  const signUp_POST_checkParams: Restify.RequestHandler = function(req, res, next) {
     // Check for missing parameters in body
     let error = null;
 
@@ -47,7 +51,7 @@ export function SignUpFn(authModule) {
   };
 
 
-  const signUp_POST = function(req, res, next) {
+  const signUp_POST: Restify.RequestHandler = function(req, res, next) {
     const email = req.body['email'];
     const username = req.body['username'];
     const password = req.body['password'];

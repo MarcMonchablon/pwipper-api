@@ -3,7 +3,7 @@ export class CredentialsService {
   constructor() {}
 
 
-  passwordMatch(account, credentials, password) {
+  public passwordMatch(account: string, credentials: any, password: string): boolean {
     switch (credentials.hashingMethod) {
       case 'none':
         return credentials.hash === password;

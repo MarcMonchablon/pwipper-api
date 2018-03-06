@@ -1,22 +1,40 @@
+import { QueryResult } from 'pg';
+import { Database } from '../../../database/database';
+
+export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse_Fail;
+export interface CheckLoginResponse_Fail { empty: true; }
+export interface CheckLoginResponse_Success {
+  empty: false;
+  account: {
+    id: string;
+    username: string;
+    email: string;
+  };
+  credentials: {
+    hashingMethod: string;
+    hash: string;
+  };
+}
+
 
 export class AuthQueryService {
-  private db: any;
+  private db: Database;
 
-  constructor(database) {
+  constructor(database: Database) {
     this.db = database;
   }
 
 
-  fetchAccount_id(accountId) {
+  public fetchAccount_id(accountId: string) {
     console.log('AuthQueryService::fetchAccount_id:', accountId); // TODO
   }
 
 
-  fetchAccount_username(username) {
+  public fetchAccount_username(username: string) {
     console.log('AuthQueryService::fetchAccount_username:', username); // TODO
   }
 
-  createAccount(username, email, password) {
+  public createAccount(username: string, email: string, password: string) {
     const query = `
     WITH new_account AS (
       INSERT INTO accounts (username, email)
@@ -79,7 +97,7 @@ export class AuthQueryService {
   }
 
 
-  checkLogin_email(email, password) {
+  public checkLogin_email(email: string, password: string): Promise<CheckLoginResponse> {
     const query = `
     SELECT * 
     FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
@@ -91,7 +109,7 @@ export class AuthQueryService {
   }
 
 
-  checkLogin_username(username, password) {
+  public checkLogin_username(username: string, password: string): Promise<CheckLoginResponse> {
     const query = `
     SELECT * 
     FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
@@ -103,12 +121,10 @@ export class AuthQueryService {
   }
 
 
-  _mapCheckLoginResult(pgResult) {
+  private _mapCheckLoginResult(pgResult: QueryResult): CheckLoginResponse {
     if (pgResult.rows.length === 0) {
       return {
-        empty: true,
-        account: null,
-        credentials: null
+        empty: true
       };
     } else {
       const row = pgResult.rows[0];

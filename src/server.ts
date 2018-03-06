@@ -1,17 +1,20 @@
-import * as restify from 'restify';
+import * as Restify from 'restify';
+
+import { Database } from './database/database';
+
 import { AuthModule } from './routes/auth';
 
 
 export class Server {
-  private database: any;
-  private restifyServer: any;
+  private database: Database;
+  private restifyServer: Restify.Server;
 
-  constructor(dbClient) {
+  constructor(dbClient: Database) {
     this.database = dbClient;
 
-    const server = restify.createServer();
-    server.use(restify.plugins.acceptParser(server.acceptable));
-    server.use(restify.plugins.bodyParser({ mapParams: false }));
+    const server = Restify.createServer();
+    server.use(Restify.plugins.acceptParser(server.acceptable));
+    server.use(Restify.plugins.bodyParser({ mapParams: false }));
     this.restifyServer = server;
 
     const authModule = AuthModule(this.database);
@@ -20,7 +23,7 @@ export class Server {
   }
 
 
-  public listen(port) {
+  public listen(port: number) {
     this.restifyServer.listen(port, () => {
       console.log('%s listening at %s', this.restifyServer.name, this.restifyServer.url);
     })

@@ -6,6 +6,6 @@ const port = 4100;
 const databaseCredentials = require('../env/database-credentials.secret.js');
 
 // MAIN
-const db = new Database(databaseCredentials);
-const server = new Server(db);
+const db: Database = new Database(databaseCredentials);
+const server: Server = new Server(db);
 server.listen(port);

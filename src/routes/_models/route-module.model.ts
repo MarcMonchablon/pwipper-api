@@ -1,10 +1,14 @@
+import * as Restify from 'restify';
+
+import { Route } from './route.model';
+
 
 export class RouteModule {
-  private moduleName: any;
+  private moduleName: string;
   private services: any;
-  private routes: any;
+  private routes: Route[];
 
-  constructor(moduleName) {
+  constructor(moduleName: string) {
     this.moduleName = moduleName;
 
     this.services = {};
@@ -12,7 +16,7 @@ export class RouteModule {
   }
 
 
-  addService(serviceName, serviceFn) {
+  public addService(serviceName: string, serviceFn) {
     if (this.services[serviceName]) {
       throw new Error(`Service '${serviceName}' already exist in ${this.moduleName}`);
     }
@@ -20,7 +24,7 @@ export class RouteModule {
   }
 
 
-  getService(serviceName) {
+  public getService(serviceName: string) {
     if (!this.services[serviceName]) {
       throw new Error(`Service '${serviceName}' doesn't exist in ${this.moduleName}`);
     }
@@ -28,12 +32,12 @@ export class RouteModule {
   }
 
 
-  addRoute(routeFn) {
+  public addRoute(routeFn) {
     this.routes.push(routeFn(this));
   }
 
 
-  registerRouteModule(restifyServer) {
+  public registerRouteModule(restifyServer: Restify.Server) {
     this.routes.forEach(route => route.registerRoute(restifyServer));
   }
 }

@@ -1,16 +1,22 @@
+import * as Restify from 'restify';
 import * as errs from 'restify-errors';
+
+import { RouteModule } from '../../_models/route-module.model';
 import { Route } from '../../_models/route.model';
+import { AuthQueryService } from '../_query/auth.query-service';
+import { AccountValidationService } from '../_service/account-validation.service';
+import { CredentialsService } from '../_service/credentials.service';
 
 
-export function LoginFn(authModule) {
+export function LoginFn(authModule: RouteModule): Route {
   const route = new Route('login');
 
-  const authQueryService = authModule.getService('authQueryService');
-  const accountValidationService = authModule.getService('accountValidationService');
-  const credentialsService = authModule.getService('credentialsService');
+  const authQueryService: AuthQueryService = authModule.getService('authQueryService');
+  const accountValidationService: AccountValidationService = authModule.getService('accountValidationService');
+  const credentialsService: CredentialsService = authModule.getService('credentialsService');
 
 
-  const login_POST_checkParams = function(req, res, next) {
+  const login_POST_checkParams: Restify.RequestHandler = function(req, res, next) {
     // Check for missing parameters in body
     let error = null;
 
@@ -40,14 +46,14 @@ export function LoginFn(authModule) {
     }
   };
 
-  const login_POST = function(req, res, next) {
+  const login_POST: Restify.RequestHandler = function(req, res, next) {
     const emailOrUsername = req.body['email-or-username'];
     const password = req.body['password'];
     const data$= accountValidationService.isEmail(emailOrUsername) ?
       authQueryService.checkLogin_email(emailOrUsername, password) :
       authQueryService.checkLogin_username(emailOrUsername, password);
 
-    data$.then(data => {
+    data$.then((data: any) => {
       if (data.empty || !credentialsService.passwordMatch(data.account, data.credentials, password)) {
         res.send(new errs.UnprocessableEntityError({code: 'INVALID_CREDENTIALS', message: 'Invalid credentials'}));
         next();

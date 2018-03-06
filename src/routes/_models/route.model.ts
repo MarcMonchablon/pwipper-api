@@ -1,16 +1,22 @@
+import * as Restify from 'restify';
+
+import { HttpVerb } from './http-verb.model';
+
+interface Endpoint { verb: HttpVerb; middlewares: Restify.RequestHandler[] }
+
 
 export class Route {
-  private path: any;
-  private endpoints: any;
+  private path: string;
+  private endpoints: Endpoint[];
 
 
-  constructor(path) {
+  constructor(path: string) {
     this.path = path;
     this.endpoints = [];
   }
 
 
-  addEndpoint(verb, middlewares) {
+  public addEndpoint(verb: HttpVerb, middlewares: Restify.RequestHandler[]): void {
     if (!Route.checkVerb(verb)) {
       throw new TypeError(`[Route ${this.path}]: ${verb} is not a valid HTTP verb`);
     } else if (this.endpointAlreadyPresent(verb)) {
@@ -21,10 +27,10 @@ export class Route {
   }
 
 
-  registerRoute(restifyServer) {
+  public registerRoute(restifyServer: Restify.Server): void {
     const methodsStr = this.endpoints.map(e => e.verb).join(', ');
 
-    const corsMiddleware = function(req, res, next) {
+    const corsMiddleware: Restify.RequestHandler = function(req, res, next) {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', methodsStr);
       res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -41,7 +47,7 @@ export class Route {
   }
 
 
-  registerEndpoint(restifyServer, verb, middleware) {
+  private registerEndpoint(restifyServer: Restify.Server, verb: HttpVerb, middleware: Restify.RequestHandler[]): void {
     const restifyMapping = {
       'POST': 'post',
       'GET': 'get',
@@ -68,13 +74,13 @@ export class Route {
   }
 
 
-  endpointAlreadyPresent(verb) {
+  private endpointAlreadyPresent(verb: HttpVerb) {
     return this.endpoints.some(e => e.verb === verb);
   }
 
 
-  static checkVerb(verb) {
-    const httpVerb = ['POST', 'GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
-    return httpVerb.includes(verb);
+  static checkVerb(verb: string) {
+    const httpVerbs: string[] = ['POST', 'GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+    return httpVerbs.includes(verb);
   }
 }
