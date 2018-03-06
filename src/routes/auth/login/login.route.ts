@@ -1,7 +1,8 @@
 const errs = require('restify-errors');
-const Route = require('../../_models/route.model');
+import { Route } from '../../_models/route.model';
 
-module.exports = function(authModule) {
+
+export function LoginFn(authModule) {
   const route = new Route('login');
 
   const authQueryService = authModule.getService('authQueryService');
@@ -70,7 +71,7 @@ module.exports = function(authModule) {
   route.addEndpoint('POST', [login_POST_checkParams, login_POST]);
   route.addEndpoint('OPTIONS', [login_OPTIONS]);
   return route;
-};
+}
 
 
 

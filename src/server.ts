@@ -1,6 +1,6 @@
 const restify = require('restify');
+import { AuthModule } from './routes/auth';
 
-const AuthModule = require('./routes/auth');
 
 export class Server {
   private database: any;

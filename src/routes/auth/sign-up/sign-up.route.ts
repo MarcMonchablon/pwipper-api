@@ -2,7 +2,7 @@ const errs = require('restify-errors');
 import { Route } from '../../_models/route.model';
 
 
-export default function(authModule) {
+export function SignUpFn(authModule) {
   const route = new Route('sign-up');
 
   const authQueryService = authModule.getService('authQueryService');
@@ -120,4 +120,4 @@ export default function(authModule) {
   route.addEndpoint('POST', [signUp_POST_checkParams, signUp_POST]);
   route.addEndpoint('OPTIONS', [signUp_OPTIONS]);
   return route;
-};
+}

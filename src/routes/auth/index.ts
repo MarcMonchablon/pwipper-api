@@ -1,22 +1,22 @@
 import { RouteModule } from '../_models/route-module.model';
 
-const AuthQueryService = require('./_query/auth.query-service.js');
-const AccountValidationService = require('./_service/account-validation.service.js');
-const CredentialsService = require('./_service/credentials.service.js');
+import { AuthQueryService } from './_query/auth.query-service';
+import { AccountValidationService } from './_service/account-validation.service';
+import { CredentialsService } from './_service/credentials.service';
 
-const LoginRouteFn = require('./login/login.route.js');
-const signUpFn = require('./sign-up/sign-up.route.js');
+import { LoginFn } from './login/login.route';
+import { SignUpFn } from './sign-up/sign-up.route';
 
 
-export default function(dbClient) {
+export function AuthModule(dbClient) {
   const authModule = new RouteModule('AuthModule');
 
   authModule.addService('authQueryService', new AuthQueryService(dbClient));
   authModule.addService('accountValidationService', new AccountValidationService());
   authModule.addService('credentialsService', new CredentialsService());
 
-  authModule.addRoute(LoginRouteFn);
-  authModule.addRoute(signUpFn);
+  authModule.addRoute(LoginFn);
+  authModule.addRoute(SignUpFn);
 
   return authModule;
-};
+}
