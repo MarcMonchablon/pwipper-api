@@ -2,34 +2,40 @@ import * as Restify from 'restify';
 
 import { HttpVerb } from './http-verb.model';
 
-interface Endpoint { verb: HttpVerb; middlewares: Restify.RequestHandler[] }
+interface Endpoint {
+  verb: string,
+  handlers: Restify.RequestHandlerType | null
+}
 
-
-export class Route {
-  private path: string;
-  private endpoints: Endpoint[];
-
+export abstract class Route {
+  private _path: string;
 
   constructor(path: string) {
-    this.path = path;
-    this.endpoints = [];
+    this._path = path;
   }
 
+  protected POST():     Restify.RequestHandlerType | null { return null; }
+  protected GET():      Restify.RequestHandlerType | null { return null; }
+  protected PUT():      Restify.RequestHandlerType | null { return null; }
+  protected PATCH():    Restify.RequestHandlerType | null { return null; }
+  protected DELETE():   Restify.RequestHandlerType | null { return null; }
+  protected HEAD():     Restify.RequestHandlerType | null { return null; }
+  protected OPTIONS():  Restify.RequestHandlerType | null { return null; }
 
-  public addEndpoint(verb: HttpVerb, middlewares: Restify.RequestHandler[]): void {
-    if (!Route.checkVerb(verb)) {
-      throw new TypeError(`[Route ${this.path}]: ${verb} is not a valid HTTP verb`);
-    } else if (this.endpointAlreadyPresent(verb)) {
-      throw new RangeError(`[Route ${this.path}]: ${verb} endpoint is already defined`);
-    }
-
-    this.endpoints.push({verb: verb, middlewares: middlewares });
-  }
 
 
   public registerRoute(restifyServer: Restify.Server): void {
-    const methodsStr = this.endpoints.map(e => e.verb).join(', ');
-
+    const endpoints: Endpoint[] = [
+      { verb: 'POST', handlers: this.POST() },
+      { verb: 'GET', handlers: this.GET() },
+      { verb: 'PUT', handlers: this.PUT() },
+      { verb: 'PATCH', handlers: this.PATCH() },
+      { verb: 'DELETE', handlers: this.DELETE() },
+      { verb: 'HEAD', handlers: this.HEAD() },
+      { verb: 'OPTIONS', handlers: this.OPTIONS() },
+    ].filter(endpoint => endpoint.handlers !== null);
+    
+    const methodsStr = endpoints.map(e => e.verb).join(', ');
     const corsMiddleware: Restify.RequestHandler = function(req, res, next) {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', methodsStr);
@@ -37,17 +43,25 @@ export class Route {
       next();
     };
 
-    this.endpoints.forEach(endpoint => {
-      const middlewares = [
+    endpoints.forEach(endpoint => {
+      if (!Route.checkVerb(endpoint.verb)) {
+        throw new TypeError(`[Route ${this._path}]: ${endpoint.verb} is not a valid HTTP verb`);
+      }
+      const mainHandlers = Array.isArray(endpoint.handlers) ? endpoint.handlers : [endpoint.handlers];
+      const handlers = [
         corsMiddleware,
-        ...endpoint.middlewares
+        ...mainHandlers
       ];
-      this.registerEndpoint(restifyServer, endpoint.verb, middlewares)
+      this.registerEndpoint(restifyServer, endpoint.verb as HttpVerb, handlers)
     });
   }
 
 
-  private registerEndpoint(restifyServer: Restify.Server, verb: HttpVerb, middleware: Restify.RequestHandler[]): void {
+  private registerEndpoint(
+    restifyServer: Restify.Server,
+    verb: HttpVerb,
+    middleware: Restify.RequestHandler[]
+  ): void {
     const restifyMapping = {
       'POST': 'post',
       'GET': 'get',
@@ -60,22 +74,17 @@ export class Route {
 
     switch (verb) {
       case 'POST':
-        restifyServer.post(this.path, middleware);
+        restifyServer.post(this._path, middleware);
         break;
       case 'GET':
-        restifyServer.get(this.path, middleware);
+        restifyServer.get(this._path, middleware);
         break;
       case 'OPTIONS':
-        restifyServer.opts(this.path, middleware);
+        restifyServer.opts(this._path, middleware);
         break;
       default:
         console.error(`Route model: HTTP verb ${verb} not handled.`);
     }
-  }
-
-
-  private endpointAlreadyPresent(verb: HttpVerb) {
-    return this.endpoints.some(e => e.verb === verb);
   }
 
 

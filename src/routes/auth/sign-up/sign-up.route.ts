@@ -3,18 +3,49 @@ import * as errs from 'restify-errors';
 
 import { RouteModule } from '../../_models/route-module.model';
 import { Route } from '../../_models/route.model';
+
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
 
 
-export function SignUpFn(authModule: RouteModule): Route {
-  const route = new Route('sign-up');
+export class SignUpRoute extends Route {
+  static path: string = 'sign-up';
 
-  const authQueryService: AuthQueryService = authModule.getService('authQueryService');
-  const accountValidationService: AccountValidationService = authModule.getService('accountValidationService');
+  private query: AuthQueryService;
+  private validator: AccountValidationService;
 
 
-  const signUp_POST_checkParams: Restify.RequestHandler = function(req, res, next) {
+  constructor(authModule: RouteModule) {
+    super(SignUpRoute.path);
+
+    this.query = authModule.getService('authQueryService');
+    this.validator = authModule.getService('accountValidationService');
+  }
+
+
+
+  // === OPTIONS =======================================================================
+
+  public OPTIONS(): Restify.RequestHandler {
+    return function(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
+      res.send();
+      next();
+    };
+  }
+
+
+
+  // === POST ==========================================================================
+
+  public POST(): Restify.RequestHandler[] {
+    return [
+      this.POST_checkParams.bind(this),
+      this.POST_mainHandler.bind(this)
+    ];
+  }
+
+
+  private POST_checkParams(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
     // Check for missing parameters in body
     let error = null;
 
@@ -49,14 +80,14 @@ export function SignUpFn(authModule: RouteModule): Route {
       next();
     }
   };
+  
+  
+  private POST_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
+    const email: string = req.body['email'];
+    const username: string = req.body['username'];
+    const password: string = req.body['password'];
 
-
-  const signUp_POST: Restify.RequestHandler = function(req, res, next) {
-    const email = req.body['email'];
-    const username = req.body['username'];
-    const password = req.body['password'];
-
-    const dataValidityState = checkData(accountValidationService, username, email);
+    const dataValidityState = this.checkData(username, email);
     if (dataValidityState !== 'OK') {
       const error = {
         code: 'INVALID_FIELD',
@@ -66,13 +97,13 @@ export function SignUpFn(authModule: RouteModule): Route {
       return next(new errs.PreconditionFailedError(error));
     }
 
-    authQueryService.createAccount(username, email, password)
+    this.query.createAccount(username, email, password)
       .then(queryResponse => {
         if (queryResponse.created) {
           res.send({ account: queryResponse.account });
           next();
         } else {
-          const errorCode = getErrorCode(queryResponse);
+          const errorCode = this.getErrorCode(queryResponse);
           const httpError = errorCode ?
             new errs.PreconditionFailedError({ code: errorCode, message: errorCode}) : // TODO: better message
             new errs.InternalServerError(queryResponse);
@@ -84,20 +115,20 @@ export function SignUpFn(authModule: RouteModule): Route {
   };
 
 
-  function checkData(validator, username, email) {
-    if (!validator.checkEmailMinLength(email)) { return 'EMAIL_TOO_SHORT'; }
-    if (!validator.checkEmailMaxLength(email)) { return 'EMAIL_TOO_LONG'; }
-    if (!validator.checkEmailCharset(email)) { return 'INVALID_EMAIL_CHARACTERS'; }
+  private checkData(username, email) {
+    if (!this.validator.checkEmailMinLength(email)) { return 'EMAIL_TOO_SHORT'; }
+    if (!this.validator.checkEmailMaxLength(email)) { return 'EMAIL_TOO_LONG'; }
+    if (!this.validator.checkEmailCharset(email)) { return 'INVALID_EMAIL_CHARACTERS'; }
 
-    if (!validator.checkUsernameMinLength(username)) { return 'USERNAME_TOO_SHORT'; }
-    if (!validator.checkUsernameMaxLength(username)) { return 'USERNAME_TOO_LONG'; }
-    if (!validator.checkUsernameCharset(username)) { return 'INVALID_USERNAME_CHARACTERS'; }
+    if (!this.validator.checkUsernameMinLength(username)) { return 'USERNAME_TOO_SHORT'; }
+    if (!this.validator.checkUsernameMaxLength(username)) { return 'USERNAME_TOO_LONG'; }
+    if (!this.validator.checkUsernameCharset(username)) { return 'INVALID_USERNAME_CHARACTERS'; }
 
     return 'OK'; // no basic error found
   }
 
 
-  function getErrorCode(queryResponse) {
+  private getErrorCode(queryResponse) {
     switch (queryResponse.errorType) {
       case 'string_data_right_truncation':
         return 'DATA_TOO_BIG';
@@ -114,15 +145,4 @@ export function SignUpFn(authModule: RouteModule): Route {
     // No code for this error ! :/
     return null;
   }
-
-
-  const signUp_OPTIONS = function(req, res, next) {
-    res.send();
-    next();
-  };
-
-
-  route.addEndpoint('POST', [signUp_POST_checkParams, signUp_POST]);
-  route.addEndpoint('OPTIONS', [signUp_OPTIONS]);
-  return route;
 }

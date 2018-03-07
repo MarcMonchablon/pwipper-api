@@ -32,8 +32,8 @@ export class RouteModule {
   }
 
 
-  public addRoute(routeFn) {
-    this.routes.push(routeFn(this));
+  public addRoute(route: Route) {
+    this.routes.push(route);
   }
 
 
