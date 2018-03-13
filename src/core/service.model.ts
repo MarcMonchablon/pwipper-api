@@ -1,6 +1,5 @@
 
 export interface ServiceMetadata {
-  id: string;
   ref: string;
   dependenciesRefs: string[];
   globalScope: boolean;
@@ -8,4 +7,4 @@ export interface ServiceMetadata {
 }
 
 
-export type Service = 'Service'; // TODO
+export type Service = any; // TODO

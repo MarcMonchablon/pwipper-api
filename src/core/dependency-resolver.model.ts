@@ -19,6 +19,8 @@ export class DependencyResolver {
     instantiatedServices: { [serviceRef: string]: Service }
   ) {
     this.services = [];
+    this.moduleServices = [];
+
     const rootModulePathStr = rootModulePath.join('/');
     for (const ref in instantiatedServices) {
       this.services.push({
@@ -35,14 +37,28 @@ export class DependencyResolver {
     moduleServicesMetadata: ServiceMetadata[]
   ): Promise<{ [serviceRef: string]: Service }> {
 
+    this.moduleServices.push({
+      path: modulePath.join('/'),
+      servicesMetadata: moduleServicesMetadata
+    });
 
-    // TODO: return instantiatedServices
-    return null;
+    return new Promise<{ [serviceRef: string]: Service }>(
+      (resolve, reject) => {
+      //  console.log('into promise !');
+        resolve({});
+      });
   }
 
 
 
   public doYourThing() {
+    console.log('========================================');
+    console.log('DependencyResolver::doYourThing()');
+    console.log('services: ', this.services);
+    console.log('moduleServices: ', this.moduleServices);
+    console.log('========================================');
+
     // TODO: start instantiating services
+
   }
 }

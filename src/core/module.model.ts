@@ -4,7 +4,9 @@ import { Service, ServiceMetadata } from './service.model';
 import { DependencyResolver } from './dependency-resolver.model';
 
 
+export { AbstractModule } from './abstract-module.model';
 export { ModuleFactory } from './module-factory.model';
+export { ServiceMetadata } from './service.model';
 
 export class Module extends AbstractModule {
   public id: string;
