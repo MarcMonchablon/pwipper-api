@@ -137,15 +137,8 @@ export class DependencyResolver {
 
 
   public doYourThing() {
-/*    console.log('========================================');
-    console.log('DependencyResolver::doYourThing()');
-    console.log('instantiatedServices: ', this.instantiatedServices);
-    console.log('factories: ', this.factories);
-//    console.log('moduleServices: ', this.moduleServices);
-    console.log('========================================');*/
 
-
-    // Compute dependencies IDs from refs
+    // === COMPUTE dependencies ids from refs ======
     const deps = [...this.instantiatedServices, ...this.factories]
       .map((s: ServiceObj | FactoryObj): DependencyObj => {
         return {
@@ -158,16 +151,68 @@ export class DependencyResolver {
     const groupedDeps = _.groupBy(deps, 'ref');
 
     this.factories.forEach((currentFactory: FactoryObj) => {
-      currentFactory.unresolvedDependenciesId = currentFactory.dependenciesRefs
+      const dependenciesId = currentFactory.dependenciesRefs
         .map((ref: string) => this.getDependencyId(ref, currentFactory, groupedDeps));
-      currentFactory.resolvedDependenciesId = [];
+
+      const [resolved, unresolved]: [string[], string[]] = _.partition(dependenciesId,
+        (id: string) => this.instantiatedServices.some((s: ServiceObj) => s.id === id));
+      currentFactory.resolvedDependenciesId = resolved;
+      currentFactory.unresolvedDependenciesId = unresolved;
     });
 
-    console.log('factories AFTER stuff:');
-    console.log(this.factories);
+
+    // === SERVICE INSTANTIATION ===================
+    let resolvableFactories: FactoryObj[];
+    let remainingFactories: FactoryObj[];
+    let newServices: ServiceObj[];
+
+    while (
+      this.factories.length > 0 &&
+      this.factories.filter(f => f.unresolvedDependenciesId.length === 0)
+      ) {
+      // We find all services that can be instantiated ...
+      [resolvableFactories, remainingFactories] = _.partition(this.factories, (f: FactoryObj) => f.unresolvedDependenciesId.length === 0);
+      if (resolvableFactories.length === 0) {
+        const cyclicDeps = this.findCyclicDependencies(remainingFactories);
+        throw new Error(`DependencyResolver::
+          Service initialization impossible because of a cyclic dependency
+          (${cyclicDeps.join(' -> ')}).`);
+      }
+
+      // ... and instantiate them ...
+      newServices = resolvableFactories.map((f: FactoryObj) => {
+        const deps = f.resolvedDependenciesId.map(
+          (depId: string) => this.instantiatedServices.find((s: ServiceObj) => s.id === depId));
+        return {
+          id: f.id,
+          ref: f.id,
+          module: f.module,
+          global: f.global,
+          instance: f.factory(...deps) // FIXME: use new ?
+        };
+      });
+      const newServicesId = newServices.map((s: ServiceObj) => s.id);
+
+      // ... then remove their ids from remaining services unresolvedDeps list ...
+      remainingFactories.forEach((f: FactoryObj) => {
+        const unresolved = f.unresolvedDependenciesId
+          .filter((dep: string) => !newServicesId.includes(dep));
+        f.unresolvedDependenciesId = unresolved;
+      });
+
+      // ... and remove them from the main serviceFactory list.
+      this.factories = remainingFactories;
+    }
+
+    // === FINISHED ! =========================
+    this.status$.emit('services-instantiated');
+  }
 
 
-    // TODO: instantiate services
+
+  private findCyclicDependencies(factories: FactoryObj[]): string[] {
+    // TODO
+    return [];
   }
 
 
