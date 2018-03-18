@@ -1,9 +1,14 @@
 
+export interface ServiceConstructor {
+  new (...deps: any[]): Service
+}
+
+
 export interface ServiceMetadata {
   ref: string;
   dependenciesRefs: string[];
   globalScope: boolean;
-  factory: (...deps: any[]) => Service;
+  factory: ServiceConstructor;
 }
 
 

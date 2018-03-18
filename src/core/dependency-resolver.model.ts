@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import * as _ from 'lodash';
 
 import { AbstractModule } from './abstract-module.model';
-import { Service, ServiceMetadata } from './service.model';
+import { Service, ServiceMetadata, ServiceConstructor } from './service.model';
 
 
 export interface InstantiatedServices {
@@ -31,7 +31,7 @@ interface FactoryObj {
   ref: string;
   module: AbstractModule,
   global: boolean,
-  factory: (...deps: any[]) => Service;
+  factory: ServiceConstructor;
   dependenciesRefs: string[];
   unresolvedDependenciesId?: string[];
   resolvedDependenciesId?: string[];
@@ -182,13 +182,16 @@ export class DependencyResolver {
       // ... and instantiate them ...
       newServices = resolvableFactories.map((f: FactoryObj) => {
         const deps = f.resolvedDependenciesId.map(
-          (depId: string) => this.instantiatedServices.find((s: ServiceObj) => s.id === depId));
+          (depId: string) => this.instantiatedServices
+            .find((s: ServiceObj) => s.id === depId)
+            .instance
+        );
         return {
           id: f.id,
           ref: f.id,
           module: f.module,
           global: f.global,
-          instance: f.factory(...deps) // FIXME: use new ?
+          instance: new f.factory(...deps)
         };
       });
       const newServicesId = newServices.map((s: ServiceObj) => s.id);
@@ -301,9 +304,3 @@ export class DependencyResolver {
 
 
 }
-
-
-/** TODO :
- * - Don't bother with Injector for now. Modules and RootModule do that stuff.
- * - Return correct services in registerModuleServices promises. (maybe use an EventEmitter to trigger stuff in promise inner function ??)
- */

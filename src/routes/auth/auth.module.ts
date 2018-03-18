@@ -1,5 +1,10 @@
 import { Module, ModuleFactory, AbstractModule, ServiceMetadata } from '../../core/module.model';
 
+import { AuthQueryService } from './_query/auth.query-service';
+import { AccountValidationService } from './_service/account-validation.service';
+import { CredentialsService } from './_service/credentials.service';
+
+
 export function authModuleFactory(parentModule: AbstractModule): Module {
   const MODULE_ID = 'auth';
 
@@ -11,21 +16,21 @@ export function authModuleFactory(parentModule: AbstractModule): Module {
     ref: 'auth-query-service',
     dependenciesRefs: ['db'],
     globalScope: false,
-    factory: () => 'Auth Query Service'
+    factory: AuthQueryService
   };
 
   const accountValidationService: ServiceMetadata = {
     ref: 'account-validation-service',
     dependenciesRefs: [],
     globalScope: true,
-    factory: () => 'Account Validation Service'
+    factory: AccountValidationService
   };
 
   const credentialsService: ServiceMetadata = {
     ref: 'credentials-service',
     dependenciesRefs: [],
     globalScope: true,
-    factory: () => 'Credentials Service'
+    factory: CredentialsService
   };
 
   return new Module(

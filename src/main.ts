@@ -13,3 +13,4 @@ const server: Server = new Server(db);
 server.listen(port);
 
 //const rootModule = rootModuleFactory({db: db});
+//rootModule.initializeRoute(server);
