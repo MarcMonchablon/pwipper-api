@@ -1,7 +1,7 @@
 import { AbstractModule } from './abstract-module.model';
 import { ModuleFactory } from './module-factory.model';
 import { Service, ServiceMetadata } from './service.model';
-import { DependencyResolver } from './dependency-resolver.model';
+import { DependencyResolver, InstantiatedServices } from './dependency-resolver.model';
 
 
 export type RootModuleFactory = (
@@ -11,11 +11,12 @@ export type RootModuleFactory = (
 
 export class RootModule extends AbstractModule {
   public id: string;
+  public isRoot: boolean;
   public path: string[];
   public dependencyResolver: DependencyResolver;
 
   private subModules: { [moduleId: string]: AbstractModule };
-  private services: { [serviceRef: string]: Service };
+  private services: InstantiatedServices;
   
 
   
@@ -27,11 +28,13 @@ export class RootModule extends AbstractModule {
   ) {
     super();
     this.id = id;
+    this.isRoot = true;
     this.path = [id];
-    this.dependencyResolver = new DependencyResolver(this.path, instantiatedServices);
+    this.dependencyResolver = new DependencyResolver(this, instantiatedServices);
 
-    this.dependencyResolver.registerModuleServices(this.path, services)
-      .then(); // TODO
+    this.dependencyResolver.registerModuleServices(this, services)
+      .then((services: InstantiatedServices) => this.services = services)
+      .catch((err: any) => { throw err; });
 
     this.subModules = {};
     subModules
