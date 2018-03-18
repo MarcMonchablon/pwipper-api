@@ -1,4 +1,5 @@
 import { DependencyResolver } from './dependency-resolver.model';
+import { Service } from './service.model';
 
 export abstract class AbstractModule {
   public id: string;
@@ -8,7 +9,5 @@ export abstract class AbstractModule {
 
   constructor() {}
 
-  // TODO
-
-
+  abstract getService(serviceRef: string, askingModuleId?: string): Service
 }

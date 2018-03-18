@@ -36,4 +36,10 @@ export class Module extends AbstractModule {
 
 
   }
+
+
+  public getService(serviceRef: string, askingModuleId?: string): Service {
+    return this.services[serviceRef] || this.parentModule.getService(serviceRef, askingModuleId || this.id);
+  }
+
 }

@@ -45,15 +45,14 @@ export class RootModule extends AbstractModule {
     this.dependencyResolver.doYourThing();
   }
 
-  private onInstantiatedServices(instantiatedServices: { [serviceRef: string]: Service }): void {
-    console.log(`Services instantiated for module ${this.id}`);
-    this.services = instantiatedServices;
 
-    // Après, dans la promise
+  public getService(serviceRef: string, askingModuleId?: string): Service {
+    const service: Service = this.services[serviceRef];
+    if (!service) {
+      throw new Error(`RootModule::getService(): No service found for ref '${serviceRef}' asked by module '${askingModuleId || this.id}'.`);
+    }
+    return service;
   }
-  
-  
-
 }
 
 
