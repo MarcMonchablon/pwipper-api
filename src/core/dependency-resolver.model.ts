@@ -1,22 +1,8 @@
 import { EventEmitter } from 'events';
+import * as _ from 'lodash';
+
 import { AbstractModule } from './abstract-module.model';
 import { Service, ServiceMetadata } from './service.model';
-
-
-
-interface ModuleObj {
-  path: string;
-  servicesMetadata: ServiceMetadata[];
-}
-
-
-interface ServiceObj {
-  parentModuleId: string,
-  path: string;
-  ref: string;
-  isGlobal: boolean;
-  instance: Service
-}
 
 
 export interface InstantiatedServices {
@@ -24,10 +10,48 @@ export interface InstantiatedServices {
 }
 
 
+interface ModuleObj {
+  id: string;
+  path: string[];
+  servicesMetadata: ServiceMetadata[];
+}
+
+
+interface ServiceObj {
+  id: string;
+  ref: string;
+  module: AbstractModule
+  global: boolean;
+  instance: Service
+}
+
+
+interface FactoryObj {
+  id: string;
+  ref: string;
+  module: AbstractModule,
+  global: boolean,
+  factory: (...deps: any[]) => Service;
+  dependenciesRefs: string[];
+  unresolvedDependenciesId?: string[];
+  resolvedDependenciesId?: string[];
+}
+
+interface DependencyObj {
+  id: string;
+  ref: string;
+  path: string[];
+  global: boolean;
+}
+
+
+
 export class DependencyResolver {
   protected status$: EventEmitter;
   private moduleServices: ModuleObj[];
   private services: ServiceObj[];
+  private instantiatedServices: ServiceObj[];
+  private factories: FactoryObj[];
 
 
   constructor(
@@ -36,14 +60,16 @@ export class DependencyResolver {
   ) {
     this.services = [];
     this.moduleServices = [];
+    this.instantiatedServices = [];
+    this.factories = [];
     this.status$ = new EventEmitter();
 
     for (const ref in instantiatedServices) {
-      this.services.push({
-        parentModuleId: rootModule.id,
-        path: rootModule.path.join('/'),
+      this.instantiatedServices.push({
+        id: this.makeId(ref, rootModule.path),
         ref: ref,
-        isGlobal: true,
+        module: rootModule,
+        global: true,
         instance: instantiatedServices[ref]
       });
     }
@@ -59,12 +85,21 @@ export class DependencyResolver {
     module: AbstractModule,
     moduleServicesMetadata: ServiceMetadata[]
   ): Promise<InstantiatedServices> {
+    // TODO: Check for module id uniqueness here.
     this.status$.emit('register-module', module.id, module.path, moduleServicesMetadata);
 
-    this.moduleServices.push({
-      path: module.path.join('/'),
-      servicesMetadata: moduleServicesMetadata
-    });
+    const newFactories: FactoryObj[] = moduleServicesMetadata
+      .map((serviceMetadata: ServiceMetadata) => {
+        return {
+          id: this.makeId(serviceMetadata.ref, module.path),
+          ref: serviceMetadata.ref,
+          module: module,
+          global: serviceMetadata.globalScope,
+          factory: serviceMetadata.factory,
+          dependenciesRefs: serviceMetadata.dependenciesRefs
+        };
+      });
+    this.factories = [...this.factories, ...newFactories];
 
     return new Promise<InstantiatedServices>(
       (resolve, reject) => {
@@ -72,8 +107,8 @@ export class DependencyResolver {
           const instantiatedServices: InstantiatedServices = {};
 
           const modulesServices = (module.isRoot) ?
-            this.services.filter((s: ServiceObj) => s.isGlobal || s.parentModuleId === module.id) :
-            this.services.filter((s: ServiceObj) => !s.isGlobal && s.parentModuleId === module.id);
+            this.services.filter((s: ServiceObj) => s.global || s.module.id === module.id) :
+            this.services.filter((s: ServiceObj) => !s.global && s.module.id === module.id);
 
           modulesServices.forEach((service: ServiceObj) => {
             if (!instantiatedServices[service.ref]) {
@@ -82,7 +117,7 @@ export class DependencyResolver {
               // Error: We cannot have with identicals refs within a module.
               const conflictingServicesPath = modulesServices
                 .filter((s: ServiceObj) => s.ref === service.ref)
-                .map((s: ServiceObj) => s.path);
+                .map((s: ServiceObj) => s.module.path.join('/'));
               const error = new Error(`DependencyResolverService::
                 For '${module.id}' module, multiple services with same ref '${service.ref}' in same module.
               Conflicting services paths: [${conflictingServicesPath.join(', ')}].`);
@@ -95,18 +130,131 @@ export class DependencyResolver {
       });
   }
 
+  private makeId(ref: string, path: string[]): string {
+    return path.join('/') + ':' + ref;
+  }
+
 
 
   public doYourThing() {
-    console.log('========================================');
+/*    console.log('========================================');
     console.log('DependencyResolver::doYourThing()');
-    console.log('services: ', this.services);
-    console.log('moduleServices: ', this.moduleServices);
-    console.log('========================================');
+    console.log('instantiatedServices: ', this.instantiatedServices);
+    console.log('factories: ', this.factories);
+//    console.log('moduleServices: ', this.moduleServices);
+    console.log('========================================');*/
 
-    // TODO: start instantiating services
 
+    // Compute dependencies IDs from refs
+    const deps = [...this.instantiatedServices, ...this.factories]
+      .map((s: ServiceObj | FactoryObj): DependencyObj => {
+        return {
+          id: s.id,
+          ref: s.ref,
+          path: s.module.path,
+          global: s.global
+        }
+      });
+    const groupedDeps = _.groupBy(deps, 'ref');
+
+    this.factories.forEach((currentFactory: FactoryObj) => {
+      currentFactory.unresolvedDependenciesId = currentFactory.dependenciesRefs
+        .map((ref: string) => this.getDependencyId(ref, currentFactory, groupedDeps));
+      currentFactory.resolvedDependenciesId = [];
+    });
+
+    console.log('factories AFTER stuff:');
+    console.log(this.factories);
+
+
+    // TODO: instantiate services
   }
+
+
+
+  /**
+   * Return the id of the service that should be injected as dependency.
+   * When multiple service match provided dependencyRef (service was shadowed somewhere in the module hierarchy),
+   * return only the most relevant one, which is the one provided in the closest parent in hierarchy (or in the same module).
+   *
+   * @param dependencyRef         Reference of service to inject as dependency
+   * @param factory               Factory asking for a dependency
+   * @param groupedDependencies:  Pre-computed dictionnary of ServiceFactory grouped by their reference
+   *
+   * @returns Id of service to be injected into factory
+   */
+  private getDependencyId(
+    dependencyRef: string,
+    factory: FactoryObj,
+    groupedDependencies: { [ref: string]: DependencyObj[] }
+  ): string {
+    const potentialDeps = groupedDependencies[dependencyRef];
+    if (!potentialDeps) {
+      throw new Error(`DependencyResolverService::
+          For '${factory.ref}' service in '${factory.module.id}' module,
+          no reference of dependency '${dependencyRef}' was found.`);
+    }
+
+    if (potentialDeps.length === 1 && potentialDeps[0].id === factory.id) {
+      throw new Error(`DependencyResolverService::
+          For '${factory.ref}' service in '${factory.module.id}' module,
+          the only reference for dependency '${dependencyRef}' is the service itself.`);
+    }
+
+    const matchingDeps = potentialDeps
+    // Les dépendences doivent être dans le scope du service à injecter ...
+      .filter((dep: DependencyObj) => this.isDependencyInScope(factory.module.path, dep))
+      // ... Et peuvent avoir le même ref, mais pas être le service en lui-même.
+      .filter((dep: DependencyObj) => dep.id !== factory.id);
+
+    if (matchingDeps.length === 0) {
+      throw new Error(`DependencyResolverService::
+          For '${factory.ref}' service in '${factory.module.id}' module,
+          potential matches for dependency '${dependencyRef}' were found, but they were all out of scope.`);
+    }
+    return this.getMostRelevantDep(matchingDeps).id;
+  }
+
+
+  /**
+   * Return true if dependency is included in current path scope,
+   * which is the case if any of these is true :
+   *  - dependency has 'global' scope
+   *  - dependency is defined in a parent path
+   *  - dependency is defined in current path
+   * */
+  private isDependencyInScope(currentPath: string[], dependency: DependencyObj): boolean {
+    if (dependency.global) {
+      // Globally-scoped service can be injected anywhere, so it's in the scope.
+      return true;
+    } else if (dependency.path.length > currentPath.length) {
+      // Dependency is deeper in the hierarchy (and not global-scoped), thus cannot be in scope.
+      return false;
+    } else {
+      // Return true only if dependency path is a parent or same as current path
+      return dependency.path
+        .every((pathSegment, i) => currentPath[i] === pathSegment);
+    }
+  }
+
+
+  private getMostRelevantDep(factories: DependencyObj[]): DependencyObj {
+    if (factories.length === 0) {
+      throw new Error('DependencyResolver::getMostRelevantDep(): input array is empty (it shouldn\'t)');
+    } else if (factories.length === 1) {
+      return factories[0];
+    } else {
+      const globallyScoped = factories.filter(f => f.global);
+      const locallyScoped = factories.filter(f => !f.global);
+      const sortedLocallyScoped = _.sortBy(locallyScoped, [(f: DependencyObj) => f.path.length]);
+      const sortedFactories = [...globallyScoped, ...sortedLocallyScoped];
+      // Take last item because we sorted from the least to the more specific/relevant factory.
+      return _.last(sortedFactories);
+    }
+  }
+
+
+
 }
 
 
