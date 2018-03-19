@@ -3,12 +3,14 @@ import { Module, ModuleFactory, AbstractModule, ServiceMetadata } from '../../co
 import { AuthQueryService } from './_query/auth.query-service';
 import { AccountValidationService } from './_service/account-validation.service';
 import { CredentialsService } from './_service/credentials.service';
+import {RouteMetadata} from '../../core/abstract-route.model';
 
 
 export function authModuleFactory(parentModule: AbstractModule): Module {
   const MODULE_ID = 'auth';
 
   // === SUB-MODULES ===================================================================
+  const declaredSubModules: ModuleFactory[] = [];
 
 
   // === SERVICES ======================================================================
@@ -33,12 +35,23 @@ export function authModuleFactory(parentModule: AbstractModule): Module {
     factory: CredentialsService
   };
 
+  const declaredServices: ServiceMetadata[] = [
+    authQueryService,
+    accountValidationService,
+    credentialsService
+  ];
+
+
+  // === ROUTES ========================================================================
+  const declaredRoutes: RouteMetadata[] = [];
+
+
   return new Module(
     MODULE_ID,
-    [], [
-      authQueryService,
-      accountValidationService,
-      credentialsService
-    ],
-    parentModule);
+    parentModule,
+    {
+      subModules: declaredSubModules,
+      services: declaredServices,
+      routes: declaredRoutes
+    });
 }
