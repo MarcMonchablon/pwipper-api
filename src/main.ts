@@ -27,6 +27,7 @@ server.use(Restify.plugins.bodyParser({ mapParams: false }));
 
 
 const rootModule = rootModuleFactory({db: db});
+rootModule.init();
 rootModule.status$.on('ready-for-routes-initialization', () => {
   /*rootModule.initializeRoutes(server);
 
