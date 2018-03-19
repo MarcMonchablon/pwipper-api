@@ -1,28 +1,24 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
 
-import { RouteModule } from '../../_models/route-module.model';
-import { Route } from '../../_models/route.model';
+import { Route, RouteMetadata } from '../../_models/route.model';
 
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
 import { CredentialsService } from '../_service/credentials.service';
 
 
+const DEPENDENCIES = ['authQueryService', 'accountValidationService', 'credentialsService'];
+
+const ROUTE_PATH = 'login';
 export class LoginRoute extends Route {
-  static path: string = 'login';
 
-  private query: AuthQueryService;
-  private validator: AccountValidationService;
-  private credentialsService: CredentialsService;
-
-
-  constructor(authModule: RouteModule) {
-    super(LoginRoute.path);
-
-    this.query = authModule.getService('authQueryService');
-    this.validator = authModule.getService('accountValidationService');
-    this.credentialsService = authModule.getService('credentialsService');
+  constructor(
+    private query: AuthQueryService,
+    private validator: AccountValidationService,
+    private credentialsService: CredentialsService
+  ) {
+    super(ROUTE_PATH);
   }
 
 
@@ -100,3 +96,10 @@ export class LoginRoute extends Route {
     });
   };
 }
+
+
+export const loginRoute: RouteMetadata = {
+  routePath: ROUTE_PATH,
+  constructor: LoginRoute,
+  dependenciesRefs: DEPENDENCIES
+};

@@ -18,9 +18,9 @@ export class RootModule extends AbstractModule {
   public status$: EventEmitter;
   public dependencyResolver: DependencyResolver;
 
-  private subModules: { [moduleId: string]: AbstractModule };
-  private services: { [serviceRef: string]: Service };
-  private routes: AbstractRoute[];
+  protected subModules: { [moduleId: string]: AbstractModule };
+  protected services: { [serviceRef: string]: Service };
+  protected routes: AbstractRoute[];
 
   
   constructor(
@@ -41,14 +41,17 @@ export class RootModule extends AbstractModule {
     this.dependencyResolver = new DependencyResolver(this, services);
 
     // TODO: mettre tout ça dans AbstractModule ?
+    console.log('root: registering-services');
     this.status$.emit('registering-services');
     this.dependencyResolver.registerModuleServices(this, declared.services)
       .then((services: InstantiatedServices) => {
         this.services = services;
+        console.log('root: services-instantiated');
         this.status$.emit('services-instantiated');
       })
       .catch((err: any) => { throw err; });
 
+    console.log('root: registering-modules');
     this.status$.emit('registering-modules');
     this.subModules = {};
     declared.subModules
@@ -56,18 +59,25 @@ export class RootModule extends AbstractModule {
       .forEach((module: AbstractModule) => this.subModules[module.id] = module);
 
     this.status$.on('services-instantiated', () => {
+      console.log('root: registering-routes');
       this.status$.emit('registering-routes');
       this.routes = declared.routes
         .map((routeMetadata: RouteMetadata): AbstractRoute => {
-          const deps: any[] = routeMetadata.dependenciesRefs.map(ref => this.getService(ref, this.id));
+          const deps: any[] = routeMetadata.dependenciesRefs.map(ref => this.getService(ref));
           return new routeMetadata.constructor(...deps);
         });
 
-      this.status$.emit('all-done');
+      console.log('root: ready-for-routes-initialization');
+      // TODO: it's not when we are ready for route intialization,
+      // but when DependencyResolver returned services to ALL modules
+      this.status$.emit('ready-for-routes-initialization');
     });
+  }
 
+  public gnip() {
+    console.log('root: resolving-dependencies');
     this.status$.emit('resolving-dependencies');
-    this.dependencyResolver.doYourThing();
+      this.dependencyResolver.doYourThing();
   }
 
 

@@ -1,4 +1,5 @@
 import * as Restify from 'restify';
+import { AbstractRoute, RouteMetadata } from '../../core/abstract-route.model';
 
 import { HttpVerb } from './http-verb.model';
 
@@ -7,11 +8,13 @@ interface Endpoint {
   handlers: Restify.RequestHandlerType | null
 }
 
-export abstract class Route {
-  private _path: string;
 
+export { RouteMetadata } from '../../core/abstract-route.model';
+
+
+export abstract class Route extends AbstractRoute {
   constructor(path: string) {
-    this._path = path;
+    super(path);
   }
 
   protected POST():     Restify.RequestHandlerType | null { return null; }
@@ -45,7 +48,7 @@ export abstract class Route {
 
     endpoints.forEach(endpoint => {
       if (!Route.checkVerb(endpoint.verb)) {
-        throw new TypeError(`[Route ${this._path}]: ${endpoint.verb} is not a valid HTTP verb`);
+        throw new TypeError(`[Route ${this.path}]: ${endpoint.verb} is not a valid HTTP verb`);
       }
       const mainHandlers = Array.isArray(endpoint.handlers) ? endpoint.handlers : [endpoint.handlers];
       const handlers = [
@@ -74,13 +77,13 @@ export abstract class Route {
 
     switch (verb) {
       case 'POST':
-        restifyServer.post(this._path, middleware);
+        restifyServer.post(this.path, middleware);
         break;
       case 'GET':
-        restifyServer.get(this._path, middleware);
+        restifyServer.get(this.path, middleware);
         break;
       case 'OPTIONS':
-        restifyServer.opts(this._path, middleware);
+        restifyServer.opts(this.path, middleware);
         break;
       default:
         console.error(`Route model: HTTP verb ${verb} not handled.`);

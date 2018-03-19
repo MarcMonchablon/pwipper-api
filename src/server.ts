@@ -1,4 +1,4 @@
-import * as Restify from 'restify';
+/*import * as Restify from 'restify';
 
 import { Database } from './database/database';
 
@@ -28,4 +28,4 @@ export class Server {
       console.log('%s listening at %s', this.restifyServer.name, this.restifyServer.url);
     })
   }
-}
+}*/

@@ -137,7 +137,6 @@ export class DependencyResolver {
 
 
   public doYourThing() {
-
     // === COMPUTE dependencies ids from refs ======
     const deps = [...this.instantiatedServices, ...this.factories]
       .map((s: ServiceObj | FactoryObj): DependencyObj => {
@@ -179,8 +178,8 @@ export class DependencyResolver {
           (${cyclicDeps.join(' -> ')}).`);
       }
 
-      // ... and instantiate them ...
-      newServices = resolvableFactories.map((f: FactoryObj) => {
+      // ... instantiate them ...
+      newServices = resolvableFactories.map((f: FactoryObj): ServiceObj => {
         const deps = f.resolvedDependenciesId.map(
           (depId: string) => this.instantiatedServices
             .find((s: ServiceObj) => s.id === depId)
@@ -194,9 +193,12 @@ export class DependencyResolver {
           instance: new f.factory(...deps)
         };
       });
-      const newServicesId = newServices.map((s: ServiceObj) => s.id);
+
+      // ... add them to this.services ...
+      this.services = [...this.services, ...newServices];
 
       // ... then remove their ids from remaining services unresolvedDeps list ...
+      const newServicesId = newServices.map((s: ServiceObj) => s.id);
       remainingFactories.forEach((f: FactoryObj) => {
         const unresolved = f.unresolvedDependenciesId
           .filter((dep: string) => !newServicesId.includes(dep));

@@ -1,9 +1,11 @@
-import { Module, ModuleFactory, AbstractModule, ServiceMetadata } from '../../core/module.model';
+import { Module, ModuleFactory, AbstractModule, ServiceMetadata, RouteMetadata } from '../../core/module.model';
 
 import { AuthQueryService } from './_query/auth.query-service';
 import { AccountValidationService } from './_service/account-validation.service';
 import { CredentialsService } from './_service/credentials.service';
-import {RouteMetadata} from '../../core/abstract-route.model';
+
+import { loginRoute } from './login/login.route';
+import { signUpRoute } from './sign-up/sign-up.route';
 
 
 export function authModuleFactory(parentModule: AbstractModule): Module {
@@ -43,7 +45,10 @@ export function authModuleFactory(parentModule: AbstractModule): Module {
 
 
   // === ROUTES ========================================================================
-  const declaredRoutes: RouteMetadata[] = [];
+  const declaredRoutes: RouteMetadata[] = [
+    loginRoute,
+    signUpRoute
+  ];
 
 
   return new Module(

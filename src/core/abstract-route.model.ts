@@ -11,5 +11,8 @@ export interface RouteMetadata {
 }
 
 
-export type AbstractRoute = any; // TODO
-
+export abstract class AbstractRoute {
+  public path: string;
+  constructor(path: string) { this.path = path; }
+  public abstract registerRoute(server: any): void
+}

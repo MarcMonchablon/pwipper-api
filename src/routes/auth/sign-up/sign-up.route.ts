@@ -1,27 +1,23 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
 
-import { RouteModule } from '../../_models/route-module.model';
-import { Route } from '../../_models/route.model';
+import { Route, RouteMetadata } from '../../_models/route.model';
 
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
 
 
+const DEPENDENCIES = [];
+
+const ROUTE_PATH = 'sign-up';
 export class SignUpRoute extends Route {
-  static path: string = 'sign-up';
 
-  private query: AuthQueryService;
-  private validator: AccountValidationService;
-
-
-  constructor(authModule: RouteModule) {
-    super(SignUpRoute.path);
-
-    this.query = authModule.getService('authQueryService');
-    this.validator = authModule.getService('accountValidationService');
+  constructor(
+    private query: AuthQueryService,
+    private validator: AccountValidationService
+  ) {
+    super(ROUTE_PATH);
   }
-
 
 
   // === OPTIONS =======================================================================
@@ -146,3 +142,11 @@ export class SignUpRoute extends Route {
     return null;
   }
 }
+
+
+export const signUpRoute: RouteMetadata = {
+  routePath: ROUTE_PATH,
+  constructor: SignUpRoute,
+  dependenciesRefs: DEPENDENCIES
+};
+

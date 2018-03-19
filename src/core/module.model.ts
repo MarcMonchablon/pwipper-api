@@ -9,6 +9,7 @@ import { AbstractRoute, RouteMetadata } from './abstract-route.model';
 export { AbstractModule } from './abstract-module.model';
 export { ModuleFactory } from './module-factory.model';
 export { ServiceMetadata } from './service.model';
+export { RouteMetadata } from './abstract-route.model';
 
 export class Module extends AbstractModule {
   public status$: EventEmitter;
@@ -18,9 +19,9 @@ export class Module extends AbstractModule {
   public dependencyResolver: DependencyResolver;
 
   private parentModule: AbstractModule;
-  private subModules: { [moduleId: string]: AbstractModule };
-  private services: { [serviceRef: string]: Service };
-  private routes: AbstractRoute[];
+  protected subModules: { [moduleId: string]: AbstractModule };
+  protected services: { [serviceRef: string]: Service };
+  protected routes: AbstractRoute[];
 
 
   constructor(
@@ -36,18 +37,22 @@ export class Module extends AbstractModule {
     this.id = id;
     this.path = [...parentModule.path, id];
     this.isRoot = false;
+    this.parentModule = parentModule;
     this.status$ = new EventEmitter();
     this.status$.on('error', err => { throw err; });
     this.dependencyResolver = parentModule.dependencyResolver;
 
+    console.log(`${this.id}: registering-services`);
     this.status$.emit('registering-services');
     this.dependencyResolver.registerModuleServices(this, declared.services)
       .then((services: InstantiatedServices) => {
         this.services = services;
+        console.log(`${this.id}: services-instantiated`);
         this.status$.emit('services-instantiated');
       })
       .catch((err: any) => { throw err; });
 
+    console.log(`${this.id}: registering-modules`);
     this.status$.emit('registering-modules');
     this.subModules = {};
     declared.subModules
@@ -55,14 +60,19 @@ export class Module extends AbstractModule {
       .forEach((module: AbstractModule) => this.subModules[module.id] = module);
 
     this.status$.on('services-instantiated', () => {
+      console.log(`${this.id}: registering-routes`);
       this.status$.emit('registering-routes');
       this.routes = declared.routes
-        .map((routeMetadata: RouteMetadata): AbstractRoute => {
-          const deps: any[] = routeMetadata.dependenciesRefs.map(ref => this.getService(ref, this.id));
+        .map(function(routeMetadata: RouteMetadata): AbstractRoute {
+          const deps: Service[] = routeMetadata.dependenciesRefs
+            .map(function (ref: string): Service {
+              return this.getService(ref);
+            }.bind(this));
           return new routeMetadata.constructor(...deps);
-        });
+        }.bind(this));
 
-      this.status$.emit('all-done');
+      console.log(`${this.id}: ready-for-routes-initialization`);
+      this.status$.emit('ready-for-routes-initialization');
     });
 
   }

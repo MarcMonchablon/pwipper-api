@@ -1,3 +1,4 @@
+/*
 import { RouteModule } from '../_models/route-module.model';
 import { Database } from '../../database/database';
 
@@ -21,3 +22,4 @@ export function AuthModule(dbClient: Database): RouteModule {
 
   return authModule;
 }
+*/
