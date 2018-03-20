@@ -33,7 +33,7 @@ export abstract class AbstractModule {
     this.services = {};
     this.routes = [];
 
-    this.status$ = new ModuleStatus(this.id, true);
+    this.status$ = new ModuleStatus(this.id, this.path, true);
     this.status$.emit('module-ready-for-init');
   }
 
@@ -80,9 +80,7 @@ export abstract class AbstractModule {
     // === INSTANTIATE ROUTES =========
     if (this.isRoot) {
       this.status$.on('ready-for-routes-instantiation').then(() => {
-        this.status$.emit('instantiating-routes');
         this.instantiateRoutes();
-        this.status$.emit('routes-instantiated');
       });
     }
 
@@ -100,18 +98,20 @@ export abstract class AbstractModule {
 
 
   public instantiateRoutes() {
+    this.status$.emit('instantiating-routes');
     // Instantiate current routes ...
     this.routes = this.declared.routes
       .map(function (routeMetadata: RouteMetadata): AbstractRoute {
         const deps: Service[] = routeMetadata.dependenciesRefs
           .map(function (ref: string): Service {
-            return this.getService(ref);
+            return this.getService(ref, routeMetadata.routePath);
           }.bind(this));
         return new routeMetadata.constructor(...deps);
       }.bind(this));
 
     // ... and then launch submodules routes activations.
     this.subModules.forEach((m: AbstractModule) => m.instantiateRoutes());
+    this.status$.emit('routes-instantiated');
   }
 
 

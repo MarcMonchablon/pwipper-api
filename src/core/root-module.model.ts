@@ -30,7 +30,7 @@ export class RootModule extends AbstractModule {
   public getService(serviceRef: string, askingModuleId?: string): Service {
     const service: Service = this.services[serviceRef];
     if (!service) {
-      throw new Error(`RootModule::getService(): No service found for ref '${serviceRef}' asked by module '${askingModuleId || this.id}'.`);
+      throw new Error(`RootModule::getService(): No service found for ref '${serviceRef}' asked by '${askingModuleId || this.id}'.`);
     }
     return service;
   }

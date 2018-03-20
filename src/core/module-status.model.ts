@@ -29,6 +29,7 @@ interface ModuleInterface {
 
 export class ModuleStatus {
   private id: string;
+  private path: string;
   private current: string;
   private verbose: boolean;
   private status$: EventEmitter;
@@ -36,9 +37,11 @@ export class ModuleStatus {
 
   constructor(
     moduleId: string,
+    path: string[],
     verbose?: boolean
   ) {
     this.id = moduleId;
+    this.path = path.join('/');
     this.verbose = !!verbose;
     this.status$ = new EventEmitter();
     this.status$.on('error', (err) => {
@@ -68,7 +71,7 @@ export class ModuleStatus {
     }
 
     if (this.verbose) {
-      console.log(`[MODULE '${this.id}'] status changed to '${newStatus}' (was '${this.current}').`)
+      console.log(`[MODULE '${this.path}'] status changed to '${newStatus}' (was '${this.current}').`)
     }
     this.current = newStatus;
     this.status$.emit('status-change', newStatus);

@@ -8,7 +8,7 @@ import { AccountValidationService } from '../_service/account-validation.service
 import { CredentialsService } from '../_service/credentials.service';
 
 
-const DEPENDENCIES = ['authQueryService', 'accountValidationService', 'credentialsService'];
+const DEPENDENCIES = ['auth-query-service', 'account-validation-service', 'credentials-service'];
 
 const ROUTE_PATH = 'login';
 export class LoginRoute extends Route {

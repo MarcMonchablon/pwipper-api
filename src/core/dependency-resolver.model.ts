@@ -58,21 +58,12 @@ export class DependencyResolver {
     rootModule: AbstractModule,
     instantiatedServices: InstantiatedServices
   ) {
-    this.services = [];
     this.moduleServices = [];
-    this.instantiatedServices = [];
+    this.instantiatedServices = this.toServiceObjArray(instantiatedServices, rootModule);
+    this.services = [...this.instantiatedServices];
     this.factories = [];
     this.status$ = new EventEmitter();
 
-    for (const ref in instantiatedServices) {
-      this.instantiatedServices.push({
-        id: this.makeId(ref, rootModule.path),
-        ref: ref,
-        module: rootModule,
-        global: true,
-        instance: instantiatedServices[ref]
-      });
-    }
 
     this.status$.on('error', (err) => {
       console.error('DependencyResolverService:: error thrown in status$ EventEmitter');
@@ -130,14 +121,31 @@ export class DependencyResolver {
       });
   }
 
+
+  private toServiceObjArray(services: InstantiatedServices, rootModule: AbstractModule): ServiceObj[] {
+    const result: ServiceObj[] = [];
+    for (const ref in services) {
+      result.push({
+        id: this.makeId(ref, rootModule.path),
+        ref: ref,
+        module: rootModule,
+        global: true,
+        instance: services[ref]
+      });
+    }
+    return result;
+  }
+
+
   private makeId(ref: string, path: string[]): string {
     return path.join('/') + ':' + ref;
   }
 
 
 
+
+
   public doYourThing() {
-    console.log('BEGIN doYourThing');
     // === COMPUTE dependencies ids from refs ======
     const deps = [...this.instantiatedServices, ...this.factories]
       .map((s: ServiceObj | FactoryObj): DependencyObj => {
@@ -188,7 +196,7 @@ export class DependencyResolver {
         );
         return {
           id: f.id,
-          ref: f.id,
+          ref: f.ref,
           module: f.module,
           global: f.global,
           instance: new f.factory(...deps)
@@ -211,8 +219,6 @@ export class DependencyResolver {
     }
 
     // === FINISHED ! =========================
-    console.log('END doYourThing');
-
     this.status$.emit('services-instantiated');
   }
 
