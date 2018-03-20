@@ -27,13 +27,6 @@ export class RootModule extends AbstractModule {
   }
 
 
-  public gnip() {
-    console.log('root: resolving-dependencies');
-    this.status$.emit('resolving-dependencies');
-      this.dependencyResolver.doYourThing();
-  }
-
-
   public getService(serviceRef: string, askingModuleId?: string): Service {
     const service: Service = this.services[serviceRef];
     if (!service) {

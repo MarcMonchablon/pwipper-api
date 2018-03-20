@@ -28,13 +28,11 @@ server.use(Restify.plugins.bodyParser({ mapParams: false }));
 
 const rootModule = rootModuleFactory({db: db});
 rootModule.init();
-rootModule.status$.on('ready-for-routes-initialization', () => {
-  /*rootModule.initializeRoutes(server);
+rootModule.status$.on('ready-for-routes-activations').then(() => {
+  rootModule.activateRoutes(server);
 
   server.listen(port, () => {
     console.log('%s listening at %s', server.name, server.url);
-  });*/
+  });
 });
-
-rootModule.gnip();
 

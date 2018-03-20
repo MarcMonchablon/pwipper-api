@@ -137,6 +137,7 @@ export class DependencyResolver {
 
 
   public doYourThing() {
+    console.log('BEGIN doYourThing');
     // === COMPUTE dependencies ids from refs ======
     const deps = [...this.instantiatedServices, ...this.factories]
       .map((s: ServiceObj | FactoryObj): DependencyObj => {
@@ -210,6 +211,8 @@ export class DependencyResolver {
     }
 
     // === FINISHED ! =========================
+    console.log('END doYourThing');
+
     this.status$.emit('services-instantiated');
   }
 
