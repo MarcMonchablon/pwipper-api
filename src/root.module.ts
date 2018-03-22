@@ -2,7 +2,7 @@ import { RootModule, Service } from './core';
 
 
 import { RoutingModule } from './routing/routing.module';
-import { AuthModule } from './routes/auth/auth.module';
+import { AuthModule } from './api/auth/auth.module';
 
 
 const MODULE_ID = 'root';
