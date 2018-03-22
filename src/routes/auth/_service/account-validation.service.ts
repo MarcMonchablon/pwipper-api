@@ -1,7 +1,12 @@
-import { Service } from '../../../core';
+import { Service, ServiceMetadata } from '../../../core';
+
+
+const REF = 'account-validation.service';
+const GLOBAL = false;
+const DEPS = [];
 
 export class AccountValidationService implements Service {
-  public ref: string = 'account-validation.service';
+  public ref: string = REF;
   constructor() {}
 
 
@@ -20,3 +25,11 @@ export class AccountValidationService implements Service {
   // For now we only watch for space or @ in username;
   public checkUsernameCharset(username: string): boolean { return !/[\s|@]/.test(username); }
 }
+
+
+export const accountValidationService: ServiceMetadata = {
+  ref: REF,
+  dependenciesRefs: DEPS,
+  globalScope: GLOBAL,
+  factory: AccountValidationService
+};

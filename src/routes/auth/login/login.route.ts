@@ -1,15 +1,17 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
-import { Route, RouteMetadata } from '../../../routes';
+
+import { Route, RouteMetadata } from '../../../routing';
 
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
 import { CredentialsService } from '../_service/credentials.service';
 
 
-const DEPENDENCIES = ['auth-query-service', 'account-validation-service', 'credentials-service'];
+const DEPENDENCIES = ['auth.query-service', 'account-validation.service', 'credentials.service'];
 
 const ROUTE_PATH = 'login';
+
 export class LoginRoute extends Route {
 
   constructor(

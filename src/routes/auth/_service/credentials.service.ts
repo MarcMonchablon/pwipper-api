@@ -1,7 +1,12 @@
-import { Service } from '../../../core';
+import { Service, ServiceMetadata } from '../../../core';
+
+
+const REF = 'credentials.service';
+const GLOBAL = true;
+const DEPS = [];
 
 export class CredentialsService implements Service {
-  public ref: string = 'credentials.service';
+  public ref: string = REF;
 
   constructor() {}
 
@@ -16,3 +21,11 @@ export class CredentialsService implements Service {
     }
   };
 }
+
+
+export const credentialsService: ServiceMetadata = {
+  ref: REF,
+  dependenciesRefs: DEPS,
+  globalScope: GLOBAL,
+  factory: CredentialsService
+};

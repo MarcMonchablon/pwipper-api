@@ -1,6 +1,8 @@
 import { QueryResult } from 'pg';
-import { Service } from '../../../core';
+import { Service, ServiceMetadata } from '../../../core';
+
 import { Database } from '../../../db';
+
 
 export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse_Fail;
 export interface CheckLoginResponse_Fail { empty: true; }
@@ -18,8 +20,12 @@ export interface CheckLoginResponse_Success {
 }
 
 
+const REF = 'auth.query-service';
+const GLOBAL = false;
+const DEPS = ['db'];
+
 export class AuthQueryService implements Service {
-  public ref: string = 'auth.query-service';
+  public ref: string = REF;
   private db: Database;
 
   constructor(database: Database) {
@@ -145,3 +151,11 @@ export class AuthQueryService implements Service {
     }
   }
 }
+
+
+export const authQueryService: ServiceMetadata = {
+  ref: REF,
+  dependenciesRefs: DEPS,
+  globalScope: GLOBAL,
+  factory: AuthQueryService
+};

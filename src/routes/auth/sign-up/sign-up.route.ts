@@ -1,6 +1,7 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
-import { Route, RouteMetadata } from '../../../routes';
+
+import { Route, RouteMetadata } from '../../../routing';
 
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
@@ -9,6 +10,7 @@ import { AccountValidationService } from '../_service/account-validation.service
 const DEPENDENCIES = [];
 
 const ROUTE_PATH = 'sign-up';
+
 export class SignUpRoute extends Route {
 
   constructor(

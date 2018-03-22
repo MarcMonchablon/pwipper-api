@@ -1,11 +1,10 @@
 import * as Restify from 'restify';
 
-import {DependencyResolver, InstantiatedServices} from './dependency-resolver.model';
-import {Service, ServiceMetadata} from './service.model';
-import {AbstractRoute, RouteMetadata} from './abstract-route.model';
+import { DependencyResolver, InstantiatedServices} from './dependency-resolver.model';
+import { Service, ServiceMetadata } from './service.model';
+import { AbstractRoute, RouteMetadata } from './abstract-route.model';
 import { ModuleFactory } from './module-factory.model';
 import { ModuleStatus } from './module-status.model';
-import {Route} from '../routes/_models/route.model';
 
 
 export abstract class AbstractModule {
