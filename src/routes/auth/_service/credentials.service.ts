@@ -1,5 +1,8 @@
+import { Service } from '../../../core';
 
-export class CredentialsService {
+export class CredentialsService implements Service {
+  public ref: string = 'credentials.service';
+
   constructor() {}
 
 

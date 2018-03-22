@@ -1,9 +1,8 @@
-import { EventEmitter } from 'events';
 import { AbstractModule } from './abstract-module.model';
 import { ModuleFactory } from './module-factory.model';
 import { Service, ServiceMetadata } from './service.model';
-import { AbstractRoute, RouteMetadata} from './abstract-route.model';
-import { DependencyResolver, InstantiatedServices } from './dependency-resolver.model';
+import { RouteMetadata} from './abstract-route.model';
+import { DependencyResolver } from './dependency-resolver.model';
 
 
 export type RootModuleFactory = (
@@ -35,5 +34,3 @@ export class RootModule extends AbstractModule {
     return service;
   }
 }
-
-

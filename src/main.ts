@@ -1,9 +1,9 @@
 import * as Restify from 'restify';
 
 //import { Server } from './server';
-import { Database } from './database/database';
+import { Database } from './db';
 
-import { rootModuleFactory} from './root.module';
+import { rootModuleFactory } from './root.module';
 
 // CONFIG
 const port = 4100;

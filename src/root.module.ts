@@ -1,16 +1,14 @@
-import { RootModule, RootModuleFactory } from './core/root-module.model';
-import { ModuleFactory } from './core/module-factory.model';
-import { Service, ServiceMetadata } from './core/service.model';
-import { RouteMetadata } from './core/abstract-route.model';
+import { RootModule, ModuleFactory, Service, ServiceMetadata, RouteMetadata } from './core';
 
-import { authModuleFactory } from './routes/auth/auth.module';
+
+import { authModule } from './routes/auth/auth.module';
 
 
 export function rootModuleFactory(services: { [serviceRef: string]: Service }): RootModule {
   const MODULE_ID = 'root';
 
   const declaredSubModules: ModuleFactory[] = [
-    authModuleFactory
+    authModule
   ];
 
   const declaredServices: ServiceMetadata[] = [];

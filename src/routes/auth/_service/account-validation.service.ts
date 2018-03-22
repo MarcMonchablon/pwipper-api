@@ -1,5 +1,7 @@
+import { Service } from '../../../core';
 
-export class AccountValidationService {
+export class AccountValidationService implements Service {
+  public ref: string = 'account-validation.service';
   constructor() {}
 
 

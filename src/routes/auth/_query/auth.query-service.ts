@@ -1,5 +1,6 @@
 import { QueryResult } from 'pg';
-import { Database } from '../../../database/database';
+import { Service } from '../../../core';
+import { Database } from '../../../db';
 
 export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse_Fail;
 export interface CheckLoginResponse_Fail { empty: true; }
@@ -17,7 +18,8 @@ export interface CheckLoginResponse_Success {
 }
 
 
-export class AuthQueryService {
+export class AuthQueryService implements Service {
+  public ref: string = 'auth.query-service';
   private db: Database;
 
   constructor(database: Database) {

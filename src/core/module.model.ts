@@ -1,15 +1,8 @@
-import { EventEmitter } from 'events';
 import { AbstractModule } from './abstract-module.model';
 import { ModuleFactory } from './module-factory.model';
 import { Service, ServiceMetadata } from './service.model';
-import { DependencyResolver, InstantiatedServices } from './dependency-resolver.model';
-import { AbstractRoute, RouteMetadata } from './abstract-route.model';
+import { RouteMetadata } from './abstract-route.model';
 
-
-export { AbstractModule } from './abstract-module.model';
-export { ModuleFactory } from './module-factory.model';
-export { ServiceMetadata } from './service.model';
-export { RouteMetadata } from './abstract-route.model';
 
 export class Module extends AbstractModule {
   private _parentModule: AbstractModule;

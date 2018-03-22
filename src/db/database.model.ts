@@ -1,7 +1,9 @@
 import { Client } from 'pg';
+import { Service } from '../core';
 
 
-export class Database {
+export class Database implements Service {
+  public ref: string = 'db';
   private client: Client;
   private status: 'connecting' | 'ok' | 'error';
   private error: any;

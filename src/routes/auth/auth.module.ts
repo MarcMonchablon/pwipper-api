@@ -1,4 +1,4 @@
-import { Module, ModuleFactory, AbstractModule, ServiceMetadata, RouteMetadata } from '../../core/module.model';
+import { Module, ModuleFactory, AbstractModule, ServiceMetadata, RouteMetadata } from '../../core';
 
 import { AuthQueryService } from './_query/auth.query-service';
 import { AccountValidationService } from './_service/account-validation.service';
@@ -8,7 +8,7 @@ import { loginRoute } from './login/login.route';
 import { signUpRoute } from './sign-up/sign-up.route';
 
 
-export function authModuleFactory(parentModule: AbstractModule): Module {
+export function authModule(parentModule: AbstractModule): Module {
   const MODULE_ID = 'auth';
 
   // === SUB-MODULES ===================================================================

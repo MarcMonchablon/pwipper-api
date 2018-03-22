@@ -1,7 +1,6 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
-
-import { Route, RouteMetadata } from '../../_models/route.model';
+import { Route, RouteMetadata } from '../../../routes';
 
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
