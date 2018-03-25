@@ -1,5 +1,7 @@
 import { Module, AbstractModule } from '../core';
 
+import { middlewareService } from './_services/middleware.service';
+
 
 const MODULE_ID = 'routing';
 
@@ -9,7 +11,9 @@ export function RoutingModule(parentModule: AbstractModule): Module {
     parentModule,
     {
       subModules: [],
-      services: [],
+      services: [
+        middlewareService
+      ],
       routes: []
     });
 }

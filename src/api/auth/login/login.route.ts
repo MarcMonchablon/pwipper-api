@@ -6,9 +6,12 @@ import { Route, RouteMetadata } from '../../../routing';
 import { AuthQueryService } from '../_query/auth.query-service';
 import { AccountValidationService } from '../_service/account-validation.service';
 import { CredentialsService } from '../_service/credentials.service';
+import { MiddlewareService } from '../../../routing/_services/middleware.service';
 
 
-const DEPENDENCIES = ['auth.query-service', 'account-validation.service', 'credentials.service'];
+const DEPENDENCIES = [
+  'auth.query-service', 'account-validation.service', 'credentials.service',
+  'middleware.service'];
 
 const ROUTE_PATH = 'login';
 
@@ -17,7 +20,8 @@ export class LoginRoute extends Route {
   constructor(
     private query: AuthQueryService,
     private validator: AccountValidationService,
-    private credentialsService: CredentialsService
+    private credentialsService: CredentialsService,
+    private middlewares: MiddlewareService
   ) {
     super(ROUTE_PATH);
   }
@@ -38,42 +42,13 @@ export class LoginRoute extends Route {
   // === POST ==========================================================================
 
   public POST(): Restify.RequestHandler[] {
+    const mandatoryFields = ['email-or-username', 'password'];
+
     return [
-      this.POST_checkParams.bind(this),
+      this.middlewares.checkBodyFields(mandatoryFields),
       this.POST_mainHandler.bind(this)
     ];
   }
-
-
-  private POST_checkParams(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
-    // Check for missing parameters in body
-    let error = null;
-
-    if (!req.body) {
-      error = {
-        code: 'MISSING_PAYLOAD',
-        message: 'Payload is missing'
-      };
-    } else if (!req.body['email-or-username']) {
-      error = {
-        code: 'MISSING_FIELD',
-        detail: 'email-or-username',
-        message: "Payload should contain fields 'email-or-username' and 'password'."
-      };
-    } else if (!req.body['password']) {
-      error = {
-        code: 'MISSING_FIELD',
-        detail: 'password',
-        message: "Payload should contain fields 'email-or-username' and 'password'."
-      };
-    }
-
-    if (error) {
-      return next(new errs.PreconditionFailedError(error));
-    } else {
-      next();
-    }
-  };
 
 
   private POST_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
