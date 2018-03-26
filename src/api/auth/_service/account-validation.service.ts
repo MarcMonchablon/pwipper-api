@@ -6,7 +6,7 @@ const GLOBAL = false;
 const DEPS = [];
 
 export class AccountValidationService implements Service {
-  public ref: string = REF;
+  public static REF: string = REF;
   constructor() {}
 
 

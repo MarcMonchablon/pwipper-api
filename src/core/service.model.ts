@@ -1,5 +1,6 @@
 
 export interface ServiceConstructor {
+  REF: string;
   new (...deps: any[]): Service
 }
 
@@ -12,6 +13,4 @@ export interface ServiceMetadata {
 }
 
 
-export interface Service {
-  ref: string;
-}
+export type Service = any;

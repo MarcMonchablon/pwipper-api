@@ -32,7 +32,7 @@ export abstract class AbstractModule {
     this.services = {};
     this.routes = [];
 
-    this.status$ = new ModuleStatus(this.id, this.path, true);
+    this.status$ = new ModuleStatus(this.id, this.path, false);
     this.status$.emit('module-ready-for-init');
   }
 

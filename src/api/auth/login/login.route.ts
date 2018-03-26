@@ -10,8 +10,11 @@ import { MiddlewareService } from '../../../routing/_services/middleware.service
 
 
 const DEPENDENCIES = [
-  'auth.query-service', 'account-validation.service', 'credentials.service',
-  'middleware.service'];
+  AuthQueryService.REF,
+  AccountValidationService.REF,
+  CredentialsService.REF,
+  MiddlewareService.REF
+];
 
 const ROUTE_PATH = 'login';
 

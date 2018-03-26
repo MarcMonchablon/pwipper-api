@@ -8,7 +8,11 @@ import { AccountValidationService } from '../_service/account-validation.service
 import { MiddlewareService } from '../../../routing/_services/middleware.service';
 
 
-const DEPENDENCIES = ['auth.query-service', 'account-validation.service', 'middleware.service'];
+const DEPENDENCIES = [
+  AuthQueryService.REF,
+  AccountValidationService.REF,
+  MiddlewareService.REF
+];
 
 const ROUTE_PATH = 'sign-up';
 

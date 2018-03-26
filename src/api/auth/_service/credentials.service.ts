@@ -6,7 +6,7 @@ const GLOBAL = true;
 const DEPS = [];
 
 export class CredentialsService implements Service {
-  public ref: string = REF;
+  public static REF: string = REF;
 
   constructor() {}
 

@@ -22,10 +22,10 @@ export interface CheckLoginResponse_Success {
 
 const REF = 'auth.query-service';
 const GLOBAL = false;
-const DEPS = ['db'];
+const DEPS = [Database.REF];
 
 export class AuthQueryService implements Service {
-  public ref: string = REF;
+  public static REF: string = REF;
   private db: Database;
 
   constructor(database: Database) {

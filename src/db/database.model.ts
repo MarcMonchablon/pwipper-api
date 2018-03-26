@@ -3,7 +3,7 @@ import { Service } from '../core';
 
 
 export class Database implements Service {
-  public ref: string = 'db';
+  public static REF: string = 'db';
   private client: Client;
   private status: 'connecting' | 'ok' | 'error';
   private error: any;

@@ -12,7 +12,7 @@ const GLOBAL = true;
 const DEPS = [];
 
 export class MiddlewareService implements Service {
-  public ref: string = REF;
+  public static REF: string = REF;
 
   constructor() {}
 
