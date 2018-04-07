@@ -3,6 +3,7 @@ import { RootModule, Service } from './core';
 
 import { RoutingModule } from './routing/routing.module';
 import { AuthModule } from './api/auth/auth.module';
+import { UserModule } from './api/users/users.module';
 
 
 const MODULE_ID = 'root';
@@ -15,7 +16,8 @@ export function rootModuleFactory(services: { [serviceRef: string]: Service }): 
       subModules: [
         RoutingModule,
         // API
-        AuthModule
+        AuthModule,
+        UserModule
       ],
       services: [],
       routes: []
