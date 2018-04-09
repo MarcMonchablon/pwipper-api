@@ -43,6 +43,38 @@ export class PweepsQueryService implements Service {
       });
   }
 
+
+  public getPweeps(userId: string): Promise<Pweep[]> {
+    const queryText = `
+    SELECT 
+      id AS id,
+      user_id AS userId,
+      timestamp AS timestamp,
+      content AS content
+    FROM pweeps
+    WHERE user_id = $1
+    ORDER by timestamp DESC;
+    `;
+
+    const query = {
+      text: queryText,
+      values: [userId]
+  //    rowMode: 'array'
+    };
+
+    return this.db.getClient()
+      .query(query)
+      .then(pgResult => {
+        return pgResult.rows
+          .map((data: any): Pweep => ({
+            id: data.id,
+            userId: data.userId,
+            timestamp: data.timeStamp,
+            content: data.content
+          }));
+      });
+  }
+
 }
 
 

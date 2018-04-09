@@ -41,6 +41,31 @@ export class PweepsRoute extends Route {
 
 
 
+  // === GET ==========================================================================
+
+  public GET(): Restify.RequestHandler[] {
+    return [
+      this.GET_mainHandler.bind(this)
+    ];
+  }
+
+
+  private GET_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
+    const userId = req.params['userid'];
+
+    this.query.getPweeps(userId)
+      .then((pweeps: Pweep[]) => {
+        res.send({ pweeps: pweeps });
+        next();
+      })
+      .catch(err => {
+        res.send(new errs.InternalServerError(err));
+        next();
+      })
+  }
+
+
+
   // === POST ==========================================================================
 
   public POST(): Restify.RequestHandler[] {
