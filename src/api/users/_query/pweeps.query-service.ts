@@ -48,7 +48,7 @@ export class PweepsQueryService implements Service {
     const queryText = `
     SELECT 
       id AS id,
-      user_id AS userId,
+      user_id AS user_id,
       timestamp AS timestamp,
       content AS content
     FROM pweeps
@@ -68,8 +68,8 @@ export class PweepsQueryService implements Service {
         return pgResult.rows
           .map((data: any): Pweep => ({
             id: data.id,
-            userId: data.userId,
-            timestamp: data.timeStamp,
+            userId: data.user_id,
+            timestamp: data.timestamp,
             content: data.content
           }));
       });

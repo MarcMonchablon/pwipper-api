@@ -1,7 +1,7 @@
 import * as Restify from 'restify';
 import * as errs from 'restify-errors';
 
-import { Route, RouteMetadata } from '../../../routing/index';
+import { Route, RouteMetadata } from '../../../routing';
 
 import { PweepsQueryService } from '../_query/pweeps.query-service';
 import { PweepService } from '../_services/pweep.service';
@@ -18,7 +18,7 @@ const DEPENDENCIES = [
 
 const ROUTE_PATH = 'users/:userid/pweeps';
 
-export class PweepsRoute extends Route {
+export class PweepListRoute extends Route {
 
   constructor(
     private query: PweepsQueryService,
@@ -105,8 +105,8 @@ export class PweepsRoute extends Route {
 }
 
 
-export const pweepsRoute: RouteMetadata = {
+export const pweepListRoute: RouteMetadata = {
   routePath: ROUTE_PATH,
-  constructor: PweepsRoute,
+  constructor: PweepListRoute,
   dependenciesRefs: DEPENDENCIES
 };

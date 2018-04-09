@@ -3,16 +3,14 @@ import { Service, ServiceMetadata } from '../../../core';
 
 import { Database } from '../../../db';
 
+import { FullUserData } from '../../users/_models/full-user-data.model';
+
 
 export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse_Fail;
 export interface CheckLoginResponse_Fail { empty: true; }
 export interface CheckLoginResponse_Success {
   empty: false;
-  account: {
-    id: string;
-    username: string;
-    email: string;
-  };
+  account: FullUserData;
   credentials: {
     hashingMethod: string;
     hash: string;
@@ -141,7 +139,10 @@ export class AuthQueryService implements Service {
         account: {
           id: row.account_id,
           username: row.username,
-          email: row.email
+          email: row.email,
+          bio: row.bio || '',
+          creationDate: row.creation_date,
+          hadFirstTour: row.had_first_tour
         },
         credentials: {
           hashingMethod: row.hashing_method,
