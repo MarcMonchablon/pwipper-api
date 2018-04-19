@@ -42,7 +42,7 @@ export abstract class Route extends AbstractRoute {
     const corsMiddleware: Restify.RequestHandler = function(req, res, next) {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', methodsStr);
-      res.header('Access-Control-Allow-Headers', 'Content-Type');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       next();
     };
 
