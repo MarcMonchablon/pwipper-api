@@ -5,19 +5,7 @@ import { AbstractModule } from './abstract-module.model';
 import { Service, ServiceMetadata, ServiceConstructor } from './service.model';
 
 
-export interface InstantiatedServices {
-  [serviceRef: string]: Service
-}
-
-
-interface ModuleObj {
-  id: string;
-  path: string[];
-  servicesMetadata: ServiceMetadata[];
-}
-
-
-interface ServiceObj {
+interface ServiceConfig {
   id: string;
   ref: string;
   module: AbstractModule
@@ -25,46 +13,49 @@ interface ServiceObj {
   instance: Service
 }
 
-
-interface FactoryObj {
+interface FactoryConfig {
   id: string;
   ref: string;
   module: AbstractModule,
   global: boolean,
   factory: ServiceConstructor;
   dependenciesRefs: string[];
-  unresolvedDependenciesId?: string[];
-  resolvedDependenciesId?: string[];
+  dependencies?: Array<{
+    ref: string;
+    id: string;
+    resolved: boolean;
+    instance: Service | null;
+  }>;
 }
 
-interface DependencyObj {
+interface DependencyConfig {
   id: string;
   ref: string;
   path: string[];
   global: boolean;
 }
 
+export interface ServiceByRef {
+  [serviceRef: string]: Service
+}
 
 
 export class DependencyResolver {
   protected status$: EventEmitter;
-  private moduleServices: ModuleObj[];
-  private services: ServiceObj[];
-  private instantiatedServices: ServiceObj[];
-  private factories: FactoryObj[];
+  private services: ServiceConfig[];
+  private factories: FactoryConfig[];
+  private registeredModuleIds: string[];
 
 
   constructor(
     rootModule: AbstractModule,
-    instantiatedServices: InstantiatedServices
+    instantiatedServices: ServiceByRef
   ) {
-    this.moduleServices = [];
-    this.instantiatedServices = this.toServiceObjArray(instantiatedServices, rootModule);
-    this.services = [...this.instantiatedServices];
+    this.services = this.createServiceConfigFromInstances(instantiatedServices, rootModule);
     this.factories = [];
+    this.registeredModuleIds = [];
+
     this.status$ = new EventEmitter();
-
-
     this.status$.on('error', (err) => {
       console.error('DependencyResolverService:: error thrown in status$ EventEmitter');
       throw err;
@@ -72,58 +63,58 @@ export class DependencyResolver {
   }
 
 
-  public registerModuleServices(
-    module: AbstractModule,
-    moduleServicesMetadata: ServiceMetadata[]
-  ): Promise<InstantiatedServices> {
-    // TODO: Check for module id uniqueness here.
-    this.status$.emit('register-module', module.id, module.path, moduleServicesMetadata);
+  public registerModuleServices(module: AbstractModule, servicesMetadata: ServiceMetadata[]): Promise<ServiceByRef> {
+    if (this.registeredModuleIds.includes(module.id)) {
+      throw new Error(`DependencyResolverService:: A module with id '${module.id}' has already been registered.`);
+    }
+    this.status$.emit('register-module', module.id, module.path, servicesMetadata);
+    this.registeredModuleIds.push(module.id);
 
-    const newFactories: FactoryObj[] = moduleServicesMetadata
-      .map((serviceMetadata: ServiceMetadata) => {
-        return {
-          id: this.makeId(serviceMetadata.ref, module.path),
-          ref: serviceMetadata.ref,
-          module: module,
-          global: serviceMetadata.globalScope,
-          factory: serviceMetadata.factory,
-          dependenciesRefs: serviceMetadata.dependenciesRefs
-        };
-      });
+    const newFactories: FactoryConfig[] = servicesMetadata.map(s => this.createFactoryFromMetadata(s, module));
     this.factories = [...this.factories, ...newFactories];
 
-    return new Promise<InstantiatedServices>(
-      (resolve, reject) => {
-        this.status$.once('services-instantiated', () => {
-          const instantiatedServices: InstantiatedServices = {};
-
-          const modulesServices = (module.isRoot) ?
-            this.services.filter((s: ServiceObj) => s.global || s.module.id === module.id) :
-            this.services.filter((s: ServiceObj) => !s.global && s.module.id === module.id);
-
-          modulesServices.forEach((service: ServiceObj) => {
-            if (!instantiatedServices[service.ref]) {
-              instantiatedServices[service.ref] = service.instance;
-            } else {
-              // Error: We cannot have with identicals refs within a module.
-              const conflictingServicesPath = modulesServices
-                .filter((s: ServiceObj) => s.ref === service.ref)
-                .map((s: ServiceObj) => s.module.path.join('/'));
-              const error = new Error(`DependencyResolverService::
-                For '${module.id}' module, multiple services with same ref '${service.ref}' in same module.
-              Conflicting services paths: [${conflictingServicesPath.join(', ')}].`);
-              reject(error);
-            }
-          });
-
-          resolve(instantiatedServices);
-        });
+    const servicesByRef$ = new Promise<ServiceByRef>( (resolve, reject) => {
+      this.status$.once('services-instantiated', () => {
+        try {
+          const moduleServices = this.getModuleServices(module, this.services);
+          resolve(moduleServices);
+        } catch (err) {
+          reject(err);
+        }
       });
+    });
+
+    return servicesByRef$;
   }
 
 
-  private toServiceObjArray(services: InstantiatedServices, rootModule: AbstractModule): ServiceObj[] {
-    const result: ServiceObj[] = [];
+  private getModuleServices(module: AbstractModule, services: ServiceConfig[]): ServiceByRef {
+    const serviceByRef: ServiceByRef = {};
+
+    const modulesServices = (module.isRoot) ?
+      services.filter((s: ServiceConfig) => s.global || s.module.id === module.id) :
+      services.filter((s: ServiceConfig) => !s.global && s.module.id === module.id);
+
+    modulesServices.forEach((service: ServiceConfig) => {
+      if (serviceByRef[service.ref]) { // Identicals refs within a module throw an error
+        const conflictingServicesPath = modulesServices
+          .filter((s: ServiceConfig) => s.ref === service.ref)
+          .map((s: ServiceConfig) => s.module.path.join('/'));
+
+        throw new Error(`DependencyResolverService::
+                For '${module.id}' module, multiple services with same ref '${service.ref}' in same module.
+                Conflicting services paths: [${conflictingServicesPath.join(', ')}].`);
+      }
+
+      serviceByRef[service.ref] = service.instance;
+    });
+
+    return serviceByRef;
+  }
+
+
+  private createServiceConfigFromInstances(services: ServiceByRef, rootModule: AbstractModule): ServiceConfig[] {
+    const result: ServiceConfig[] = [];
     for (const ref in services) {
       result.push({
         id: this.makeId(ref, rootModule.path),
@@ -137,6 +128,18 @@ export class DependencyResolver {
   }
 
 
+  private createFactoryFromMetadata(metadata: ServiceMetadata, module: AbstractModule): FactoryConfig {
+    return {
+      id: this.makeId(metadata.ref, module.path),
+      ref: metadata.ref,
+      module: module,
+      global: metadata.globalScope,
+      factory: metadata.factory,
+      dependenciesRefs: metadata.dependenciesRefs
+    };
+  }
+
+
   private makeId(ref: string, path: string[]): string {
     return path.join('/') + ':' + ref;
   }
@@ -145,10 +148,48 @@ export class DependencyResolver {
 
 
 
-  public doYourThing() {
+  public resolveDependencies() {
+    let factories: FactoryConfig[] = this.factories;
+    let services: ServiceConfig[] = this.services;
+
     // === COMPUTE dependencies ids from refs ======
-    const deps = [...this.instantiatedServices, ...this.factories]
-      .map((s: ServiceObj | FactoryObj): DependencyObj => {
+    this.computeDependencies(factories, services);
+
+    // === SERVICE INSTANTIATION ===================
+    let resolvableFactories: FactoryConfig[];
+    let remainingFactories: FactoryConfig[];
+    let newServices: ServiceConfig[];
+
+    while (factories.length > 0) {
+      this.updateDependencies(factories, services);
+
+      // We find all factories that can be instantiated ...
+      [resolvableFactories, remainingFactories] = this.partitionFactories(factories);
+      if (resolvableFactories.length === 0) {
+        throw this.createCyclicDependenciesError(remainingFactories);
+      }
+
+      // ... instantiate them ...
+      newServices = this.instanciateServices(resolvableFactories);
+
+      // ... and add them to services list.
+      services = [...services, ...newServices];
+      factories = remainingFactories;
+    }
+
+    // === FINISHED ! =========================
+    this.factories = [];
+    this.services = services;
+    this.status$.emit('services-instantiated');
+  }
+
+
+
+
+
+  private computeDependencies(factories: FactoryConfig[], services: ServiceConfig[]): void {
+    const deps = [...services, ...factories]
+      .map((s: ServiceConfig | FactoryConfig): DependencyConfig => {
         return {
           id: s.id,
           ref: s.ref,
@@ -158,76 +199,83 @@ export class DependencyResolver {
       });
     const groupedDeps = _.groupBy(deps, 'ref');
 
-    this.factories.forEach((currentFactory: FactoryObj) => {
-      const dependenciesId = currentFactory.dependenciesRefs
-        .map((ref: string) => this.getDependencyId(ref, currentFactory, groupedDeps));
-
-      const [resolved, unresolved]: [string[], string[]] = _.partition(dependenciesId,
-        (id: string) => this.instantiatedServices.some((s: ServiceObj) => s.id === id));
-      currentFactory.resolvedDependenciesId = resolved;
-      currentFactory.unresolvedDependenciesId = unresolved;
+    factories.forEach((currentFactory: FactoryConfig) => {
+      currentFactory.dependencies = currentFactory.dependenciesRefs
+        .map((ref: string) => {
+          const id = this.getDependencyId(ref, currentFactory, groupedDeps);
+          return {
+            ref: ref,
+            id: id,
+            resolved: false,
+            instance: null
+          };
+        });
     });
-
-
-    // === SERVICE INSTANTIATION ===================
-    let resolvableFactories: FactoryObj[];
-    let remainingFactories: FactoryObj[];
-    let newServices: ServiceObj[];
-
-    while (
-      this.factories.length > 0 &&
-      this.factories.filter(f => f.unresolvedDependenciesId.length === 0)
-      ) {
-      // We find all services that can be instantiated ...
-      [resolvableFactories, remainingFactories] = _.partition(this.factories, (f: FactoryObj) => f.unresolvedDependenciesId.length === 0);
-      if (resolvableFactories.length === 0) {
-        const cyclicDeps = this.findCyclicDependencies(remainingFactories);
-        throw new Error(`DependencyResolver::
-          Service initialization impossible because of a cyclic dependency
-          (${cyclicDeps.join(' -> ')}).`);
-      }
-
-      // ... instantiate them ...
-      newServices = resolvableFactories.map((f: FactoryObj): ServiceObj => {
-        const deps = f.resolvedDependenciesId.map(
-          (depId: string) => this.instantiatedServices
-            .find((s: ServiceObj) => s.id === depId)
-            .instance
-        );
-        return {
-          id: f.id,
-          ref: f.ref,
-          module: f.module,
-          global: f.global,
-          instance: new f.factory(...deps)
-        };
-      });
-
-      // ... add them to this.services ...
-      this.services = [...this.services, ...newServices];
-
-      // ... then remove their ids from remaining services unresolvedDeps list ...
-      const newServicesId = newServices.map((s: ServiceObj) => s.id);
-      remainingFactories.forEach((f: FactoryObj) => {
-        const unresolved = f.unresolvedDependenciesId
-          .filter((dep: string) => !newServicesId.includes(dep));
-        f.unresolvedDependenciesId = unresolved;
-      });
-
-      // ... and remove them from the main serviceFactory list.
-      this.factories = remainingFactories;
-    }
-
-    // === FINISHED ! =========================
-    this.status$.emit('services-instantiated');
   }
 
 
-
-  private findCyclicDependencies(factories: FactoryObj[]): string[] {
-    // TODO
-    return [];
+  /**
+   * For each factory, set dependencies as resolved when they match one of the given services;
+   * Leave non-matching dependencies unchanged.
+   * This method mutate factories dependencies when they are resolved.
+   *
+   * @param factories
+   * @param services
+   */
+  private updateDependencies(factories: FactoryConfig[], services: ServiceConfig[]): void {
+    const servicesById = _.keyBy(services, 'id');
+    factories.forEach((f: FactoryConfig) => {
+      f.dependencies.forEach((dep) => {
+        if (servicesById[dep.id]) {
+          dep.instance = servicesById[dep.id].instance;
+          dep.resolved = true;
+        }
+      });
+    });
   }
+
+
+  /**
+   * Partition factories into a tuple of [resolvable, remaining] factories.
+   * A factory is deemed resolvable when it has no unresolved dependencies (or no dependency at all).
+   * If a factory still has unresolved dependencies, it goes into the 'remaining' bin.
+   *
+   * @param factories
+   * @returns [resolvableFactories, remainingFactories]
+   */
+  private partitionFactories(factories: FactoryConfig[]): [FactoryConfig[], FactoryConfig[]] {
+    const [resolvableFactories, remainingFactories] = _.partition(factories,
+      (f: FactoryConfig) => _.every(f.dependencies, { resolved: true }) );
+    return [resolvableFactories, remainingFactories];
+  }
+
+
+  /**
+   * Take resolvable factories, instanciate them, and return them as a ServiceConfig Array.
+   * If there is a dependencie somewhere without an instance, throw an error.
+   *
+   * @param factories       Factories corresponding to services to be instanciated
+   * @returns services      Array of ServiceConfig corresponding to instanciated services
+   */
+  private instanciateServices(factories: FactoryConfig[]): ServiceConfig[] {
+    return factories.map((f: FactoryConfig): ServiceConfig => {
+      const deps = f.dependencies.map(d => {
+        if (!d.resolved || d.instance === undefined || d.instance === null) {
+          throw new Error(`DependencyResolver::
+          Service factory '${f.id}' should have all dependencies resolved, yet ${d.id} isn't.`);
+        }
+        return d.instance;
+      });
+      return {
+        id: f.id,
+        ref: f.ref,
+        module: f.module,
+        global: f.global,
+        instance: new f.factory(...deps)
+      };
+    });
+  }
+
 
 
 
@@ -238,14 +286,14 @@ export class DependencyResolver {
    *
    * @param dependencyRef         Reference of service to inject as dependency
    * @param factory               Factory asking for a dependency
-   * @param groupedDependencies:  Pre-computed dictionnary of ServiceFactory grouped by their reference
+   * @param groupedDependencies   Pre-computed dictionnary of ServiceFactory grouped by their reference
    *
    * @returns Id of service to be injected into factory
    */
   private getDependencyId(
     dependencyRef: string,
-    factory: FactoryObj,
-    groupedDependencies: { [ref: string]: DependencyObj[] }
+    factory: FactoryConfig,
+    groupedDependencies: { [ref: string]: DependencyConfig[] }
   ): string {
     const potentialDeps = groupedDependencies[dependencyRef];
     if (!potentialDeps) {
@@ -262,9 +310,9 @@ export class DependencyResolver {
 
     const matchingDeps = potentialDeps
     // Les dépendences doivent être dans le scope du service à injecter ...
-      .filter((dep: DependencyObj) => this.isDependencyInScope(factory.module.path, dep))
+      .filter((dep: DependencyConfig) => this.isDependencyInScope(factory.module.path, dep))
       // ... Et peuvent avoir le même ref, mais pas être le service en lui-même.
-      .filter((dep: DependencyObj) => dep.id !== factory.id);
+      .filter((dep: DependencyConfig) => dep.id !== factory.id);
 
     if (matchingDeps.length === 0) {
       throw new Error(`DependencyResolverService::
@@ -282,7 +330,7 @@ export class DependencyResolver {
    *  - dependency is defined in a parent path
    *  - dependency is defined in current path
    * */
-  private isDependencyInScope(currentPath: string[], dependency: DependencyObj): boolean {
+  private isDependencyInScope(currentPath: string[], dependency: DependencyConfig): boolean {
     if (dependency.global) {
       // Globally-scoped service can be injected anywhere, so it's in the scope.
       return true;
@@ -297,7 +345,8 @@ export class DependencyResolver {
   }
 
 
-  private getMostRelevantDep(factories: DependencyObj[]): DependencyObj {
+
+  private getMostRelevantDep(factories: DependencyConfig[]): DependencyConfig {
     if (factories.length === 0) {
       throw new Error('DependencyResolver::getMostRelevantDep(): input array is empty (it shouldn\'t)');
     } else if (factories.length === 1) {
@@ -305,7 +354,7 @@ export class DependencyResolver {
     } else {
       const globallyScoped = factories.filter(f => f.global);
       const locallyScoped = factories.filter(f => !f.global);
-      const sortedLocallyScoped = _.sortBy(locallyScoped, [(f: DependencyObj) => f.path.length]);
+      const sortedLocallyScoped = _.sortBy(locallyScoped, [(f: DependencyConfig) => f.path.length]);
       const sortedFactories = [...globallyScoped, ...sortedLocallyScoped];
       // Take last item because we sorted from the least to the more specific/relevant factory.
       return _.last(sortedFactories);
@@ -313,5 +362,17 @@ export class DependencyResolver {
   }
 
 
+  private createCyclicDependenciesError(factories: FactoryConfig[]): any {
+    const cyclicDeps = this.findCyclicDependencies(factories);
+    return new Error(`DependencyResolver::
+          Service initialization impossible because of a cyclic dependency
+          (${cyclicDeps.join(' -> ')}).`);
+  }
+
+
+  private findCyclicDependencies(factories: FactoryConfig[]): string[] {
+    // TODO
+    return [];
+  }
 
 }

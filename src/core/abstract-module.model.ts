@@ -1,6 +1,6 @@
 import * as Restify from 'restify';
 
-import { DependencyResolver, InstantiatedServices} from './dependency-resolver.model';
+import { DependencyResolver, ServiceByRef} from './dependency-resolver.model';
 import { Service, ServiceMetadata } from './service.model';
 import { AbstractRoute, RouteMetadata } from './abstract-route.model';
 import { ModuleFactory } from './module-factory.model';
@@ -63,13 +63,13 @@ export abstract class AbstractModule {
     if (this.isRoot) {
       this.status$.on('ready-to-resolve-dependency').then(() => {
         this.status$.emit('resolving-dependencies');
-        this.dependencyResolver.doYourThing();
+        this.dependencyResolver.resolveDependencies();
       });
     }
 
 
     // === INSTANTIATE SERVICES =======
-    resolvedServices$.then((services: InstantiatedServices) => {
+    resolvedServices$.then((services: ServiceByRef) => {
       // Promise fulfilled when DependencyResolved did his thing.
       this.services = services;
       this.status$.emit('services-instantiated');
