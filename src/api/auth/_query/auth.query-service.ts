@@ -2,6 +2,7 @@ import { QueryResult } from 'pg';
 import { Service, ServiceMetadata } from '../../../core';
 
 import { Database } from '../../../db';
+import { JwtService } from '../_service/Jwt.service';
 
 import { FullUserData } from '../../users/_models/full-user-data.model';
 
@@ -10,6 +11,7 @@ export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse
 export interface CheckLoginResponse_Fail { empty: true; }
 export interface CheckLoginResponse_Success {
   empty: false;
+  token: string;
   account: FullUserData;
   credentials: {
     hashingMethod: string;
@@ -20,15 +22,18 @@ export interface CheckLoginResponse_Success {
 
 const REF = 'auth.query-service';
 const GLOBAL = false;
-const DEPS = [Database.REF];
+const DEPS = [
+  Database.REF,
+  JwtService.REF
+];
 
 export class AuthQueryService implements Service {
   public static REF: string = REF;
-  private db: Database;
 
-  constructor(database: Database) {
-    this.db = database;
-  }
+  constructor(
+    private db: Database,
+    private jwt: JwtService
+  ) {}
 
 
   public fetchAccount_id(accountId: string) {
@@ -121,21 +126,24 @@ export class AuthQueryService implements Service {
     FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
     WHERE username = $1;`;
 
+    const self = this;
     return this.db.getClient()
       .query(query, [username])
       .then(this._mapCheckLoginResult);
   }
 
 
-  private _mapCheckLoginResult(pgResult: QueryResult): CheckLoginResponse {
+  private _mapCheckLoginResult = (pgResult: QueryResult): CheckLoginResponse => {
     if (pgResult.rows.length === 0) {
       return {
         empty: true
       };
     } else {
       const row = pgResult.rows[0];
+      const token = this.createToken(row.account_id, row.latest_token_reset);
       return {
         empty: false,
+        token: token,
         account: {
           id: row.account_id,
           username: row.username,
@@ -150,6 +158,13 @@ export class AuthQueryService implements Service {
         }
       };
     }
+  };
+
+  private createToken(userId: string, latestTokenReset: string): string {
+    return this.jwt.createToken({
+      userId: userId,
+      latestReset: latestTokenReset
+    });
   }
 }
 

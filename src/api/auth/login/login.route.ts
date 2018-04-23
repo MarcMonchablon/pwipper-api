@@ -66,7 +66,10 @@ export class LoginRoute extends Route {
         res.send(new errs.UnprocessableEntityError({code: 'INVALID_CREDENTIALS', message: 'Invalid credentials'}));
         next();
       } else {
-        res.send({account: data.account });
+        res.send({
+          account: data.account,
+          token: data.token
+        });
         next();
       }
     }).catch(e => {
