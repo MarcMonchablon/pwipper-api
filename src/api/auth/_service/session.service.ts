@@ -2,34 +2,14 @@ import { Service, ServiceMetadata } from '../../../core';
 
 import { JwtService, JwtCheckResponse } from './Jwt.service';
 import { AuthQueryService, LoginData as RawLoginData } from '../_query/auth.query-service';
-import { SessionQueryService } from '../_query/session.query-service';
-import {FullUserData} from '../../users/_models/full-user-data.model';
+import { FullUserData } from '../../users/_models/full-user-data.model';
+import { Cache } from '../../../_models/cache.model';
 
 
 interface SessionData {
   userId: string;
   latestReset: string;
 }
-
-/*type SessionStoreItem = SessionStoreItem__Loading | SessionStoreItem__Logged | SessionStoreItem__NotLogged | SessionStoreItem__Error;
-interface SessionStoreItem__Loading     { status: 'loading'; promise: any; }
-interface SessionStoreItem__Logged      { status: 'logged'; sessionData: SessionData; }
-interface SessionStoreItem__NotLogged   { status: 'not-logged'; sessionData: SessionData; }
-interface SessionStoreItem__Error       { status: 'error'; err: any }*/
-
-type UserId = string;
-
-type SessionStoreItem_old =
- | { status: 'loading'; promise: any; }
- | { status: 'logged'; sessionData: SessionData; account: any; }
- | { status: 'not-logged'; sessionData: SessionData; }
- | { status: 'error'; err: any };
-
-type SessionStoreItem = {
-  sessionData: SessionData,
-  promise: Promise<UserId | null>;
-}
-
 
 export interface LoginData {
   token: string;
@@ -41,20 +21,18 @@ const REF = 'session.service';
 const GLOBAL = false;
 const DEPS = [
   JwtService.REF,
-  AuthQueryService.REF,
-  SessionQueryService.REF
+  AuthQueryService.REF
 ];
 
 export class SessionService implements Service {
   public static REF: string = REF;
-  private sessions: { [userId: string]: SessionStoreItem };
+  private sessions: Cache<Promise<LoginData | null>>;
 
   constructor(
     private jwt: JwtService,
-    private authQuery: AuthQueryService,
-    private sessionQuery: SessionQueryService
+    private authQuery: AuthQueryService
   ) {
-    this.sessions = {};
+    this.sessions = new Cache<Promise<LoginData | null>>();
   }
 
 
@@ -64,28 +42,30 @@ export class SessionService implements Service {
       this.authQuery.checkLogin_username(emailOrUsername, password);
 
     return login$
-      .then((loginData: RawLoginData | null) => {
-        if (loginData === null) {
+      .then((data: RawLoginData | null) => {
+        if (data === null) {
           return null;
         } else {
-          const sessionData = loginData.session;
+          const sessionData = data.session;
           const token = this.createToken(sessionData);
-          return {
-            token: token,
-            account: loginData.account
-          };
+          const loginData: LoginData = { token: token, account: data.account };
+          this.sessions.save(Promise.resolve(loginData), token);
+          return loginData;
         }
       })
   }
 
 
   public checkSession(bearerToken: string): Promise<LoginData | null> {
+    const savedSession = this.sessions.find(bearerToken);
+    if (savedSession) { return savedSession; }
+
     const tokenData = this.parseToken(bearerToken);
     if (tokenData === null) {
       return Promise.resolve(null);
     }
 
-    return this.authQuery
+    const session$ = this.authQuery
       .checkSession(tokenData.userId, tokenData.latestReset)
       .then((loginData: RawLoginData | null) => {
         if (loginData === null) {
@@ -96,25 +76,9 @@ export class SessionService implements Service {
             account: loginData.account
           };
         }
-      })
-  }
-
-
-
-  public checkToken(token: string): Promise<UserId | null> {
-    // TODO: appeler cette fonction dans un middleware de connection.
-    const payload = this.parseToken(token);
-    if (!payload) { return Promise.reject('No token or no valid payload found'); }
-
-    let session = this.sessions[payload.userId];
-    if (!session) {
-      const promise = this.sessionQuery.checkSession(payload.userId, payload.latestReset);
-      session = { sessionData: payload, promise: promise };
-      this.sessions[payload.userId] = session;
-    }
-    return session.promise;
-    // TODO: utiliser le latestReset pour filtrer le store.
-    // TODO: plutôt qu'indexer avec l'userId, indexer avec le token ?
+      });
+    this.sessions.save(session$, bearerToken);
+    return session$;
   }
 
 
@@ -124,6 +88,7 @@ export class SessionService implements Service {
       latestReset: data.latestReset
     });
   }
+
 
   private parseToken(bearerToken: string): SessionData | null {
     const parsedToken = this.jwt.checkBearer(bearerToken);
@@ -135,9 +100,6 @@ export class SessionService implements Service {
       latestReset: payload.latestReset
     };
   }
-
-
-
 
 }
 

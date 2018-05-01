@@ -39,6 +39,7 @@ export class MiddlewareService implements Service {
     optionalFields: string[] = [],
     throwOnUnknownField: boolean = true
   ): RequestHandler {
+    const computeFieldsAsSentence = this.computeFieldsAsSentence;
 
     return function(req: Request, res: Response, next: Next) {
       let error = null;
@@ -56,7 +57,7 @@ export class MiddlewareService implements Service {
       if (!error && missingFields.length > 0) {
         error = {
           code: 'MISSING_FIELD',
-          message: `Payload is missing ${MiddlewareService.computeFieldsAsSentence(missingFields)}.`,
+          message: `Payload is missing ${computeFieldsAsSentence(missingFields)}.`,
           detail: missingFields
         };
       }
@@ -72,7 +73,7 @@ export class MiddlewareService implements Service {
         if (unknownFields.length > 0) {
           error = {
             code: 'UNKNOWN_FIELD',
-            message: `Payload has unknown ${MiddlewareService.computeFieldsAsSentence(unknownFields)}.`,
+            message: `Payload has unknown ${computeFieldsAsSentence(unknownFields)}.`,
             detail: unknownFields
           }
         }
@@ -88,7 +89,7 @@ export class MiddlewareService implements Service {
   }
 
 
-  public static computeFieldsAsSentence(missingFields: string[]): string {
+  private computeFieldsAsSentence(missingFields: string[]): string {
     if (!missingFields || missingFields.length === 0) {
       throw new Error(`[${REF}]:computeListAsSentence:  Expected non-empty list as arguments, got ${missingFields} instead.`);
     } else if (missingFields.length === 1) {

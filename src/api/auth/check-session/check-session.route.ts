@@ -2,12 +2,11 @@ import * as Restify from 'restify';
 import * as errs from 'restify-errors';
 
 import { Route, RouteMetadata } from '../../../routing';
-
-import { SessionService, LoginData } from '../_service/session.service';
+import { AuthMiddleware, USER_DATA_KEY, UserData } from '../_middleware/auth.middleware';
 
 
 const DEPENDENCIES = [
-  SessionService.REF
+  AuthMiddleware.REF
 ];
 
 const ROUTE_PATH = 'check-session';
@@ -15,7 +14,7 @@ const ROUTE_PATH = 'check-session';
 export class CheckSessionRoute extends Route {
 
   constructor(
-    private sessionService: SessionService
+    private authMiddleware: AuthMiddleware
   ) {
     super(ROUTE_PATH);
   }
@@ -38,33 +37,25 @@ export class CheckSessionRoute extends Route {
   public POST(): Restify.RequestHandler[] {
 
     return [
+      this.authMiddleware.checkAuthorization(true),
       this.POST_mainHandler.bind(this)
     ];
   }
 
 
   private POST_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
-    const bearerToken = req.headers['authorization'];
-    if (!bearerToken || typeof bearerToken !== 'string') {
-      next(new errs.NotAuthorizedError('No bearer token found'));
+    const userData = req[USER_DATA_KEY] as UserData | null;
+    if (!userData) {
+      next(new errs.InternalServerError(`Invalid user data : ${userData}`));
       return;
     }
 
-    this.sessionService.checkSession(bearerToken)
-      .then((loginData: LoginData | null) => {
-        if (loginData === null) {
-          next(new errs.NotAuthorizedError('Bearer token not valid.'));
-        } else {
-          res.send({
-            account: loginData.account,
-            token: loginData.token
-          });
-          next();
-        }
-      }).catch(e => {
-        console.error('CheckSession: Something unexpected happened : ', e);
-        next(new errs.InternalServerError(e));
-      });
+    const payload = {
+      account: userData.account,
+      token: userData.token
+    };
+    res.send(payload);
+    next();
   }
 }
 
