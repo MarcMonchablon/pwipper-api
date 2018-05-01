@@ -30,6 +30,20 @@ export class JwtService implements Service {
   }
 
 
+  public checkBearer(bearerToken: string): JwtCheckResponse {
+    const bearer = bearerToken.substring(0, 7);
+    if (bearer === 'Bearer ') {
+      const token = bearerToken.substring(7);
+      return this.checkToken(token);
+    } else {
+      return {
+        ok: false,
+        err: new Error(`Expected a Bearer token, got '${bearerToken}' instead.`)
+      };
+    }
+  }
+
+
   public checkToken(token: string): JwtCheckResponse {
     try {
       const payload = jwt.verify(token, this.secret, { algorithms: [this.algorithm] });

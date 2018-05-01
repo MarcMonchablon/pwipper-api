@@ -3,14 +3,14 @@ import * as errs from 'restify-errors';
 
 import { Route, RouteMetadata } from '../../../routing';
 
-import { AuthQueryService } from '../_query/auth.query-service';
+import { SessionService, LoginData } from '../_service/session.service';
 import { AccountValidationService } from '../_service/account-validation.service';
 import { CredentialsService } from '../_service/credentials.service';
 import { MiddlewareService } from '../../../routing/_services/middleware.service';
 
 
 const DEPENDENCIES = [
-  AuthQueryService.REF,
+  SessionService.REF,
   AccountValidationService.REF,
   CredentialsService.REF,
   MiddlewareService.REF
@@ -21,7 +21,7 @@ const ROUTE_PATH = 'login';
 export class LoginRoute extends Route {
 
   constructor(
-    private query: AuthQueryService,
+    private sessionService: SessionService,
     private validator: AccountValidationService,
     private credentialsService: CredentialsService,
     private middlewares: MiddlewareService
@@ -57,12 +57,11 @@ export class LoginRoute extends Route {
   private POST_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
     const emailOrUsername = req.body['email-or-username'];
     const password = req.body['password'];
-    const data$ = this.validator.isEmail(emailOrUsername) ?
-      this.query.checkLogin_email(emailOrUsername, password) :
-      this.query.checkLogin_username(emailOrUsername, password);
+    const isEmail = this.validator.isEmail(emailOrUsername);
+    const data$ = this.sessionService.login(emailOrUsername, password, isEmail);
 
-    data$.then((data: any) => {
-      if (data.empty || !this.credentialsService.passwordMatch(data.account, data.credentials, password)) {
+    data$.then((data: LoginData | null) => {
+      if (data === null) {
         res.send(new errs.UnprocessableEntityError({code: 'INVALID_CREDENTIALS', message: 'Invalid credentials'}));
         next();
       } else {

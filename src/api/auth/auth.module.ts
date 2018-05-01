@@ -4,8 +4,11 @@ import { authQueryService } from './_query/auth.query-service';
 import { accountValidationService } from './_service/account-validation.service';
 import { credentialsService } from './_service/credentials.service';
 import { jwtService } from './_service/Jwt.service';
+import { sessionService } from './_service/session.service';
+import { sessionQueryService } from './_query/session.query-service';
 
 import { loginRoute } from './login/login.route';
+import { checkSessionRoute } from './check-session/check-session.route';
 import { signUpRoute } from './sign-up/sign-up.route';
 
 
@@ -21,10 +24,13 @@ export function AuthModule(parentModule: AbstractModule): Module {
         authQueryService,
         accountValidationService,
         credentialsService,
-        jwtService
+        jwtService,
+        sessionService,
+        sessionQueryService
       ],
       routes: [
         loginRoute,
+        checkSessionRoute,
         signUpRoute
       ]
     });

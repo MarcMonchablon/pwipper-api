@@ -2,16 +2,15 @@ import { QueryResult } from 'pg';
 import { Service, ServiceMetadata } from '../../../core';
 
 import { Database } from '../../../db';
-import { JwtService } from '../_service/Jwt.service';
 
 import { FullUserData } from '../../users/_models/full-user-data.model';
 
 
-export type CheckLoginResponse = CheckLoginResponse_Success | CheckLoginResponse_Fail;
-export interface CheckLoginResponse_Fail { empty: true; }
-export interface CheckLoginResponse_Success {
-  empty: false;
-  token: string;
+export interface LoginData {
+  session: {
+    userId: string;
+    latestReset: string
+  };
   account: FullUserData;
   credentials: {
     hashingMethod: string;
@@ -23,16 +22,14 @@ export interface CheckLoginResponse_Success {
 const REF = 'auth.query-service';
 const GLOBAL = false;
 const DEPS = [
-  Database.REF,
-  JwtService.REF
+  Database.REF
 ];
 
 export class AuthQueryService implements Service {
   public static REF: string = REF;
 
   constructor(
-    private db: Database,
-    private jwt: JwtService
+    private db: Database
   ) {}
 
 
@@ -108,7 +105,20 @@ export class AuthQueryService implements Service {
   }
 
 
-  public checkLogin_email(email: string, password: string): Promise<CheckLoginResponse> {
+  public checkSession(userId: string, latestReset: string): Promise<LoginData | null> {
+    const query = `
+    SELECT *
+    FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
+    WHERE accounts.id = $1;`; //  AND credentials.latest_token_reset = $2
+    // TODO: add latestReset check.
+
+    return this.db.getClient()
+      .query(query, [userId])
+      .then(this._mapCheckLoginResult);
+  }
+
+
+  public checkLogin_email(email: string, password: string): Promise<LoginData | null> {
     const query = `
     SELECT * 
     FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
@@ -120,7 +130,7 @@ export class AuthQueryService implements Service {
   }
 
 
-  public checkLogin_username(username: string, password: string): Promise<CheckLoginResponse> {
+  public checkLogin_username(username: string, password: string): Promise<LoginData | null> {
     const query = `
     SELECT * 
     FROM accounts INNER JOIN credentials ON (accounts.id = credentials.account_id)
@@ -133,17 +143,16 @@ export class AuthQueryService implements Service {
   }
 
 
-  private _mapCheckLoginResult = (pgResult: QueryResult): CheckLoginResponse => {
+  private _mapCheckLoginResult = (pgResult: QueryResult): LoginData | null => {
     if (pgResult.rows.length === 0) {
-      return {
-        empty: true
-      };
+      return null;
     } else {
       const row = pgResult.rows[0];
-      const token = this.createToken(row.account_id, row.latest_token_reset);
       return {
-        empty: false,
-        token: token,
+        session: {
+          userId: row.account_id,
+          latestReset: row.latest_token_reset
+        },
         account: {
           id: row.account_id,
           username: row.username,
@@ -159,13 +168,6 @@ export class AuthQueryService implements Service {
       };
     }
   };
-
-  private createToken(userId: string, latestTokenReset: string): string {
-    return this.jwt.createToken({
-      userId: userId,
-      latestReset: latestTokenReset
-    });
-  }
 }
 
 
