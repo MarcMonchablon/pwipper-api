@@ -6,6 +6,7 @@ import { Route, RouteMetadata } from '../../../routing';
 import { PweepsQueryService } from '../_query/pweeps.query-service';
 import { PweepService } from '../_services/pweep.service';
 import { MiddlewareService } from '../../../routing/_services/middleware.service';
+import { AuthMiddleware, UserData, USER_DATA_KEY } from '../../auth/_middleware/auth.middleware';
 
 import { Pweep } from '../_models/pweep.model';
 
@@ -13,7 +14,8 @@ import { Pweep } from '../_models/pweep.model';
 const DEPENDENCIES = [
   PweepsQueryService.REF,
   PweepService.REF,
-  MiddlewareService.REF
+  MiddlewareService.REF,
+  AuthMiddleware.REF
 ];
 
 const ROUTE_PATH = 'users/:userid/pweeps';
@@ -23,7 +25,8 @@ export class PweepListRoute extends Route {
   constructor(
     private query: PweepsQueryService,
     private pweepService: PweepService,
-    private middlewares: MiddlewareService
+    private middlewares: MiddlewareService,
+    private authMiddleware: AuthMiddleware
   ) {
     super(ROUTE_PATH);
   }
@@ -45,6 +48,7 @@ export class PweepListRoute extends Route {
 
   public GET(): Restify.RequestHandler[] {
     return [
+      this.authMiddleware.checkAuthorization(false),
       this.GET_mainHandler.bind(this)
     ];
   }
@@ -74,6 +78,8 @@ export class PweepListRoute extends Route {
     return [
       this.middlewares.checkBodyFields(mandatoryFields),
       this.POST_checkContentSize.bind(this),
+      this.authMiddleware.checkAuthorization(true),
+      this.POST_checkUserData.bind(this),
       this.POST_mainHandler.bind(this)
     ];
   }
@@ -87,8 +93,27 @@ export class PweepListRoute extends Route {
     }
   }
 
+
+  private POST_checkUserData(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
+    const userData = req[USER_DATA_KEY] as UserData | null;
+    if (!userData) {
+      next(new errs.InternalServerError(`Invalid user data : ${userData}`));
+      return;
+    }
+    const paramsUserId = req.params['userid'];
+    const tokenUserId = userData.account.id;
+
+    if (paramsUserId !== tokenUserId) {
+      next(new errs.PreconditionFailedError(`UserId mismatch: is '${paramsUserId}' in params yet '${tokenUserId}' in bearer token.`));
+    } else {
+      next();
+    }
+  }
+
+
   private POST_mainHandler(req: Restify.Request, res: Restify.Response, next: Restify.Next) {
-    const userId: string = req.params['userid'];
+    const userData = req[USER_DATA_KEY] as UserData | null;
+    const userId = userData.account.id;
     const content: string = req.body['content'];
 
     this.query.createPweeps(userId, content)
