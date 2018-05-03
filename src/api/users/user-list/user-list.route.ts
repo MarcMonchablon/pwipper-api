@@ -15,7 +15,7 @@ const DEPENDENCIES = [
   MiddlewareService.REF
 ];
 
-const ROUTE_PATH = 'users';
+const ROUTE_PATH = '/users';
 
 export class UserListRoute extends Route {
 

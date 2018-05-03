@@ -14,7 +14,7 @@ const DEPENDENCIES = [
   MiddlewareService.REF
 ];
 
-const ROUTE_PATH = 'user-by-name/:username';
+const ROUTE_PATH = '/user-by-name/:username';
 
 export class UserByNameRoute extends Route {
 

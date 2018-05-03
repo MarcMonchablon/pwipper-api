@@ -18,7 +18,7 @@ const DEPENDENCIES = [
   AuthMiddleware.REF
 ];
 
-const ROUTE_PATH = 'users/:userid/pweeps';
+const ROUTE_PATH = '/users/:userid/pweeps';
 
 export class PweepListRoute extends Route {
 

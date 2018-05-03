@@ -14,7 +14,7 @@ const DEPENDENCIES = [
   MiddlewareService.REF
 ];
 
-const ROUTE_PATH = 'sign-up';
+const ROUTE_PATH = '/sign-up';
 
 export class SignUpRoute extends Route {
 

@@ -9,7 +9,7 @@ const DEPENDENCIES = [
   AuthMiddleware.REF
 ];
 
-const ROUTE_PATH = 'check-session';
+const ROUTE_PATH = '/check-session';
 
 export class CheckSessionRoute extends Route {
 

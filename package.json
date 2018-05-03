@@ -10,15 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "jsonwebtoken": "^8.2.1",
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.10",
     "pg": "^7.4.1",
-    "restify": "^6.4.0",
-    "restify-errors": "^5.0.0"
+    "restify": "^7.0.0",
+    "restify-errors": "^6.0.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^7.2.6",
-    "@types/node": "^9.6.2",
-    "@types/pg": "^7.4.5",
+    "@types/jsonwebtoken": "^7.2.7",
+    "@types/node": "^9.6.9",
+    "@types/pg": "^7.4.8",
     "@types/restify": "^5.0.7",
     "@types/restify-errors": "^4.3.2",
     "@types/restify-plugins": "^1.5.11",
@@ -27,6 +27,6 @@
     "gulp-sourcemaps": "^2.6.4",
     "gulp-typescript": "^4.0.2",
     "run-sequence": "^2.2.1",
-    "typescript": "^2.8.1"
+    "typescript": "^2.8.3"
   }
 }

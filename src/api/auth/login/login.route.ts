@@ -16,7 +16,7 @@ const DEPENDENCIES = [
   MiddlewareService.REF
 ];
 
-const ROUTE_PATH = 'login';
+const ROUTE_PATH = '/login';
 
 export class LoginRoute extends Route {
 
